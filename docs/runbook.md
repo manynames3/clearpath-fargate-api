@@ -26,6 +26,14 @@ aws secretsmanager put-secret-value \
   --secret-string "$GHL_WEBHOOK_SECRET"
 ```
 
+Configure the GoHighLevel Workflow Custom Webhook to send `POST` requests to:
+
+```text
+https://api.clearpathpropertygroup.com/webhooks/ghl
+```
+
+Use [ghl-integration.md](ghl-integration.md) for the expected payload fields and shared secret header.
+
 Run the schema migration through RDS Proxy:
 
 ```bash

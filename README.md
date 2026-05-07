@@ -32,6 +32,7 @@ See [docs/portfolio-demo.md](docs/portfolio-demo.md) for the short-lived deploym
 Use [docs/demo-evidence-template.md](docs/demo-evidence-template.md) when capturing screenshots and command output.
 Review [docs/cost-estimate.md](docs/cost-estimate.md) before opening an AWS demo window.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
+Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel webhook setup and payload mapping.
 
 ## Local Quick Start
 
@@ -158,7 +159,7 @@ flowchart LR
 
 ## Endpoints
 
-- `POST /webhooks/ghl`
+- `POST /webhooks/ghl` - GoHighLevel contact webhook ingestion
 - `GET /api/leads?county=Gwinnett&status=warm&days_since_contact=30`
 - `GET /api/market/gwinnett`
 - `GET /health`

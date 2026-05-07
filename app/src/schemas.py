@@ -1,6 +1,37 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+def _first_present(data: dict, *keys: str):
+    for key in keys:
+        value = data.get(key)
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def _normalize_custom_fields(value) -> dict[str, str | int | None]:
+    if value is None:
+        return {}
+
+    if isinstance(value, dict):
+        return value
+
+    if not isinstance(value, list):
+        return {}
+
+    fields: dict[str, str | int | None] = {}
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+
+        key = _first_present(item, "key", "fieldKey", "name", "fieldName", "id")
+        field_value = _first_present(item, "value", "field_value", "fieldValue")
+        if key and field_value is not None:
+            fields[str(key)] = field_value
+
+    return fields
 
 
 class GHLWebhookPayload(BaseModel):
@@ -12,6 +43,40 @@ class GHLWebhookPayload(BaseModel):
     source: str | None = None
     status: str = "new"
     custom_fields: dict[str, str | int | None] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_highlevel_payload(cls, data):
+        if not isinstance(data, dict):
+            return data
+
+        contact = data.get("contact")
+        if not isinstance(contact, dict):
+            contact = {}
+
+        fields = _normalize_custom_fields(_first_present(data, "custom_fields", "customFields"))
+        top_level_property_fields = {
+            "property_address": _first_present(data, "property_address", "propertyAddress"),
+            "city": data.get("city"),
+            "county": data.get("county"),
+            "state": data.get("state"),
+            "zip": _first_present(data, "zip", "postalCode"),
+            "situation": data.get("situation"),
+        }
+        for key, value in top_level_property_fields.items():
+            if value not in (None, "") and key not in fields:
+                fields[key] = value
+
+        return {
+            "contact_id": _first_present(data, "contact_id", "contactId", "id") or _first_present(contact, "id"),
+            "first_name": _first_present(data, "first_name", "firstName") or _first_present(contact, "first_name", "firstName"),
+            "last_name": _first_present(data, "last_name", "lastName") or _first_present(contact, "last_name", "lastName"),
+            "phone": data.get("phone") or contact.get("phone"),
+            "email": data.get("email") or contact.get("email"),
+            "source": data.get("source") or contact.get("source"),
+            "status": data.get("status") or contact.get("status") or "new",
+            "custom_fields": fields,
+        }
 
 
 class PropertyResponse(BaseModel):

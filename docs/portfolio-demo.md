@@ -34,6 +34,7 @@ After apply, capture:
 - WAF WebACL attached to CloudFront
 - CloudWatch dashboard and alarms
 - API health response through the custom domain
+- GoHighLevel webhook test returning `{"status":"accepted"}` and creating a lead
 - `/api/market/gwinnett` response with cache headers
 
 Use [demo-evidence-template.md](demo-evidence-template.md) as the screenshot and command-output checklist. Store screenshots in `docs/screenshots/`.

@@ -13,26 +13,42 @@ from src.schemas import GHLWebhookPayload
 router = APIRouter()
 
 
-def _verify_signature(body: bytes, signature: str | None) -> None:
+def _verify_signature(
+    body: bytes,
+    signature: str | None,
+    shared_secret_header: str | None,
+    authorization: str | None,
+) -> None:
     settings = get_settings()
     if not settings.ghl_webhook_secret:
         return
 
     secret = fetch_secret_string(settings.ghl_webhook_secret, settings.aws_region)
+    bearer_token = ""
+    if authorization and authorization.lower().startswith("bearer "):
+        bearer_token = authorization.removeprefix("Bearer ").removeprefix("bearer ").strip()
+
+    if hmac.compare_digest(secret, shared_secret_header or "") or hmac.compare_digest(secret, bearer_token):
+        return
+
     expected = hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
     provided = (signature or "").removeprefix("sha256=")
-    if not hmac.compare_digest(expected, provided):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook signature")
+    if hmac.compare_digest(expected, provided):
+        return
+
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook signature")
 
 
 @router.post("/ghl")
 async def receive_ghl_webhook(
     request: Request,
-    x_ghl_signature: str | None = Header(default=None),
+    x_clearpath_signature: str | None = Header(default=None),
+    x_clearpath_webhook_secret: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
     session: AsyncSession = Depends(get_session),
 ):
     body = await request.body()
-    _verify_signature(body, x_ghl_signature)
+    _verify_signature(body, x_clearpath_signature, x_clearpath_webhook_secret, authorization)
     payload = GHLWebhookPayload.model_validate_json(body)
     fields = payload.custom_fields
 

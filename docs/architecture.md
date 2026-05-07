@@ -2,6 +2,8 @@
 
 Clearpath Lead Intelligence API receives GoHighLevel contact webhooks, stores lead/property/follow-up data in RDS PostgreSQL, and serves query and market snapshot endpoints through CloudFront.
 
+GoHighLevel is connected through a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping and webhook authentication.
+
 ```mermaid
 sequenceDiagram
     participant Client as Client or GHL
