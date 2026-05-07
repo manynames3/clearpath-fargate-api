@@ -11,6 +11,25 @@ This repository is built as a portfolio-grade AWS Terraform project for Clearpat
 
 This repo is currently built and validated locally only. Do not run `terraform apply` until you intentionally want to create billable AWS resources.
 
+## Portfolio Demo Strategy
+
+This project is designed to be deployed briefly, documented, and destroyed. The portfolio value is the architecture and Terraform implementation, not leaving ECS, ALB, RDS, RDS Proxy, NAT, CloudFront, and WAF running at idle.
+
+For interviews, the strongest story is the cost-aware production tradeoff: RDS PostgreSQL is implemented because the current workload is modest and predictable, while Aurora is documented as the upgrade path for higher scale or availability requirements. That shows judgment instead of simply choosing the most expensive managed database.
+
+Capture screenshots during one short AWS demo window, then tear the stack down:
+
+- ECS service with healthy Fargate tasks
+- ALB target group health
+- RDS PostgreSQL instance in private subnets
+- RDS Proxy target healthy
+- CloudFront distribution with WAF attached
+- `/api/market/*` cache behavior or response headers
+- CloudWatch dashboard and alarms
+- Terraform plan/apply/destroy output
+
+See [docs/portfolio-demo.md](docs/portfolio-demo.md) for the short-lived deployment checklist.
+
 ## Local Quick Start
 
 The fastest portfolio demo is local Docker Compose: FastAPI plus Postgres, no AWS resources.
@@ -100,6 +119,19 @@ The performance requirement is practical rather than extreme. The API needs fast
 For production failover and high availability, RDS can be promoted to Multi-AZ when the project has real uptime requirements. That is a straightforward upgrade path without taking on Aurora-specific operational behavior too early. Aurora would make more sense later if lead volume grows materially, concurrent webhook traffic increases, read scaling becomes necessary, or the business needs stronger regional availability and faster failover characteristics.
 
 Autoscaling is another tradeoff. Aurora Serverless can scale capacity more dynamically, but this API does not currently have spiky enough database demand to justify that complexity. A small provisioned RDS instance is easier to reason about, easier to estimate for demos, and cheaper for the expected volume. The project can revisit Aurora when traffic, scaling, or availability requirements are no longer served well by provisioned RDS.
+
+## Production Upgrade Path
+
+The demo defaults are intentionally cost-controlled. For a real production launch, keep the same service boundaries but harden the database and teardown settings:
+
+- set `rds_multi_az = true`
+- choose a larger RDS class after load testing, such as `db.t4g.small` or `db.t4g.medium`
+- enable deletion protection and final snapshots
+- keep `rds.force_ssl = 1`
+- keep RDS Proxy for Fargate connection pooling
+- add alarms for CPU, storage, connections, latency, and free memory
+
+Aurora PostgreSQL becomes the next database option if webhook volume, concurrent lead searches, read scaling, or failover requirements outgrow provisioned RDS.
 
 ## Architecture
 

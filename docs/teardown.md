@@ -20,6 +20,15 @@ aws ecs wait services-stable \
 CloudFront distributions take time to disable and delete. If a full destroy is blocked by CloudFront or ACM dependencies, destroy in stages:
 
 ```bash
+# From the repository root:
+scripts/teardown.sh
+```
+
+The script scales ECS to zero, prints a Terraform destroy plan, and asks for confirmation before applying it.
+
+For manual teardown:
+
+```bash
 cd terraform/environments/dev
 terraform plan -destroy -out=destroy.tfplan
 terraform apply destroy.tfplan
