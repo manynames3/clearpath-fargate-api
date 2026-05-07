@@ -86,3 +86,21 @@ variable "multi_az" {
   type        = bool
   default     = false
 }
+
+variable "deletion_protection" {
+  description = "Whether deletion protection is enabled for RDS. Keep false for teardown demos; enable for production."
+  type        = bool
+  default     = false
+}
+
+variable "skip_final_snapshot" {
+  description = "Whether to skip the final RDS snapshot on destroy. Keep true for teardown demos; set false for production."
+  type        = bool
+  default     = true
+}
+
+variable "final_snapshot_identifier" {
+  description = "Final snapshot identifier to use when skip_final_snapshot is false."
+  type        = string
+  default     = null
+}

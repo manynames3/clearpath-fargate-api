@@ -50,8 +50,9 @@ The demo defaults prioritize cost and clean teardown. For a real production depl
 
 - enable RDS Multi-AZ
 - increase the RDS instance class after load testing
-- enable deletion protection
-- keep final snapshots
+- set `rds_deletion_protection = true`
+- set `rds_skip_final_snapshot = false` and provide `rds_final_snapshot_identifier`
+- set `alb_deletion_protection = true`
 - preserve SSL enforcement with `rds.force_ssl = 1`
 - keep RDS Proxy between ECS and PostgreSQL
 - tune ECS desired count and autoscaling from observed request volume

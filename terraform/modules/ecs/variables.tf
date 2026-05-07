@@ -100,3 +100,9 @@ variable "desired_count" {
   type        = number
   default     = 2
 }
+
+variable "alb_deletion_protection" {
+  description = "Whether deletion protection is enabled for the ALB. Keep false for teardown demos; enable for production."
+  type        = bool
+  default     = false
+}

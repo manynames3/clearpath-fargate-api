@@ -93,6 +93,22 @@ variable "rds_multi_az" {
   type        = bool
 }
 
+variable "rds_deletion_protection" {
+  description = "Whether deletion protection is enabled for RDS. Keep false for teardown demos; enable for production."
+  type        = bool
+}
+
+variable "rds_skip_final_snapshot" {
+  description = "Whether to skip the final RDS snapshot on destroy. Keep true for teardown demos; set false for production."
+  type        = bool
+}
+
+variable "rds_final_snapshot_identifier" {
+  description = "Final snapshot identifier to use when rds_skip_final_snapshot is false."
+  type        = string
+  default     = null
+}
+
 variable "app_database_username" {
   description = "Database username used by the application through RDS Proxy IAM auth."
   type        = string
@@ -111,6 +127,11 @@ variable "ecs_log_group_name" {
 variable "ecs_desired_count" {
   description = "Desired ECS task count."
   type        = number
+}
+
+variable "alb_deletion_protection" {
+  description = "Whether deletion protection is enabled for the ALB. Keep false for teardown demos; enable for production."
+  type        = bool
 }
 
 variable "api_domain_name" {

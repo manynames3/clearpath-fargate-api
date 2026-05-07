@@ -56,20 +56,23 @@ module "dns_certificate" {
 module "rds" {
   source = "../../modules/rds"
 
-  project                  = var.project
-  env                      = var.env
-  aws_region               = var.aws_region
-  database_subnet_ids      = module.networking.private_database_subnet_ids
-  rds_proxy_subnet_ids     = module.networking.private_ecs_subnet_ids
-  database_sg_id           = module.networking.database_sg_id
-  rds_proxy_sg_id          = module.networking.rds_proxy_sg_id
-  database_name            = var.database_name
-  master_username          = var.master_username
-  engine_version           = var.postgres_engine_version
-  instance_class           = var.rds_instance_class
-  allocated_storage_gb     = var.rds_allocated_storage_gb
-  max_allocated_storage_gb = var.rds_max_allocated_storage_gb
-  multi_az                 = var.rds_multi_az
+  project                   = var.project
+  env                       = var.env
+  aws_region                = var.aws_region
+  database_subnet_ids       = module.networking.private_database_subnet_ids
+  rds_proxy_subnet_ids      = module.networking.private_ecs_subnet_ids
+  database_sg_id            = module.networking.database_sg_id
+  rds_proxy_sg_id           = module.networking.rds_proxy_sg_id
+  database_name             = var.database_name
+  master_username           = var.master_username
+  engine_version            = var.postgres_engine_version
+  instance_class            = var.rds_instance_class
+  allocated_storage_gb      = var.rds_allocated_storage_gb
+  max_allocated_storage_gb  = var.rds_max_allocated_storage_gb
+  multi_az                  = var.rds_multi_az
+  deletion_protection       = var.rds_deletion_protection
+  skip_final_snapshot       = var.rds_skip_final_snapshot
+  final_snapshot_identifier = var.rds_final_snapshot_identifier
 }
 
 module "iam" {
@@ -89,26 +92,27 @@ module "iam" {
 module "ecs" {
   source = "../../modules/ecs"
 
-  project                = var.project
-  env                    = var.env
-  aws_region             = var.aws_region
-  vpc_id                 = module.networking.vpc_id
-  public_subnet_ids      = module.networking.public_subnet_ids
-  private_subnet_ids     = module.networking.private_ecs_subnet_ids
-  alb_sg_id              = module.networking.alb_sg_id
-  ecs_sg_id              = module.networking.ecs_sg_id
-  ecs_task_role_arn      = module.iam.ecs_task_role_arn
-  ecs_execution_role_arn = module.iam.ecs_execution_role_arn
-  ecr_repository_name    = var.ecr_repository_name
-  ecs_log_group_name     = var.ecs_log_group_name
-  database_name          = var.database_name
-  database_username      = var.app_database_username
-  database_secret_arn    = module.rds.master_user_secret_arn
-  rds_proxy_endpoint     = module.rds.rds_proxy_endpoint
-  ghl_webhook_secret_arn = module.iam.ghl_webhook_secret_arn
-  acm_cert_arn           = module.dns_certificate.certificate_arn
-  create_https_listener  = true
-  desired_count          = var.ecs_desired_count
+  project                 = var.project
+  env                     = var.env
+  aws_region              = var.aws_region
+  vpc_id                  = module.networking.vpc_id
+  public_subnet_ids       = module.networking.public_subnet_ids
+  private_subnet_ids      = module.networking.private_ecs_subnet_ids
+  alb_sg_id               = module.networking.alb_sg_id
+  ecs_sg_id               = module.networking.ecs_sg_id
+  ecs_task_role_arn       = module.iam.ecs_task_role_arn
+  ecs_execution_role_arn  = module.iam.ecs_execution_role_arn
+  ecr_repository_name     = var.ecr_repository_name
+  ecs_log_group_name      = var.ecs_log_group_name
+  database_name           = var.database_name
+  database_username       = var.app_database_username
+  database_secret_arn     = module.rds.master_user_secret_arn
+  rds_proxy_endpoint      = module.rds.rds_proxy_endpoint
+  ghl_webhook_secret_arn  = module.iam.ghl_webhook_secret_arn
+  acm_cert_arn            = module.dns_certificate.certificate_arn
+  create_https_listener   = true
+  desired_count           = var.ecs_desired_count
+  alb_deletion_protection = var.alb_deletion_protection
 }
 
 module "cloudfront" {

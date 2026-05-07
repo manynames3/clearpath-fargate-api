@@ -239,8 +239,8 @@ resource "aws_iam_role_policy" "rds_enhanced_monitoring" {
 resource "aws_db_instance" "main" {
   #checkov:skip=CKV_AWS_157:Single-AZ is intentional for the current cost-controlled demo stage; enable var.multi_az for production.
   #checkov:skip=CKV_AWS_133:RDS-managed master user password creates the secret without plaintext in Terraform state.
-  #checkov:skip=CKV_AWS_16:Final snapshots are intentionally skipped for teardown-first portfolio demos.
-  #checkov:skip=CKV_AWS_293:Deletion protection is intentionally disabled for teardown-first portfolio demos.
+  #checkov:skip=CKV_AWS_16:Final snapshots are controlled by var.skip_final_snapshot; demo defaults skip them for teardown, production should set false.
+  #checkov:skip=CKV_AWS_293:Deletion protection is controlled by var.deletion_protection; demo defaults disable it for teardown, production should enable it.
   #checkov:skip=CKV2_AWS_8:AWS Backup plan is intentionally omitted because this portfolio environment is disposable and teardown-first.
   identifier                          = local.db_identifier
   allocated_storage                   = var.allocated_storage_gb
@@ -251,7 +251,7 @@ resource "aws_db_instance" "main" {
   copy_tags_to_snapshot               = true
   db_name                             = var.database_name
   db_subnet_group_name                = aws_db_subnet_group.database.name
-  deletion_protection                 = false
+  deletion_protection                 = var.deletion_protection
   enabled_cloudwatch_logs_exports     = ["postgresql", "upgrade"]
   engine                              = "postgres"
   engine_version                      = var.engine_version
@@ -267,7 +267,8 @@ resource "aws_db_instance" "main" {
   performance_insights_enabled        = true
   performance_insights_kms_key_id     = aws_kms_key.database.arn
   publicly_accessible                 = false
-  skip_final_snapshot                 = true
+  final_snapshot_identifier           = var.final_snapshot_identifier
+  skip_final_snapshot                 = var.skip_final_snapshot
   storage_encrypted                   = true
   storage_type                        = "gp3"
   username                            = var.master_username
@@ -276,6 +277,13 @@ resource "aws_db_instance" "main" {
   tags = merge(local.common_tags, {
     Name = local.db_identifier
   })
+
+  lifecycle {
+    precondition {
+      condition     = var.skip_final_snapshot || var.final_snapshot_identifier != null
+      error_message = "final_snapshot_identifier must be set when skip_final_snapshot is false."
+    }
+  }
 }
 
 data "aws_iam_policy_document" "rds_proxy_assume" {

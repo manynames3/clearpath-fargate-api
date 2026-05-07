@@ -126,7 +126,9 @@ The demo defaults are intentionally cost-controlled. For a real production launc
 
 - set `rds_multi_az = true`
 - choose a larger RDS class after load testing, such as `db.t4g.small` or `db.t4g.medium`
-- enable deletion protection and final snapshots
+- set `rds_deletion_protection = true`
+- set `rds_skip_final_snapshot = false` and provide `rds_final_snapshot_identifier`
+- set `alb_deletion_protection = true`
 - keep `rds.force_ssl = 1`
 - keep RDS Proxy for Fargate connection pooling
 - add alarms for CPU, storage, connections, latency, and free memory
