@@ -371,7 +371,7 @@ resource "aws_ecs_task_definition" "api" {
         { name = "AWS_REGION", value = var.aws_region },
         { name = "DB_NAME", value = var.database_name },
         { name = "DB_USER", value = var.database_username },
-        { name = "DB_SECRET_ARN", value = var.aurora_secret_arn },
+        { name = "DB_SECRET_ARN", value = var.database_secret_arn },
         { name = "DB_PROXY_ENDPOINT", value = var.rds_proxy_endpoint },
         { name = "GHL_WEBHOOK_SECRET", value = var.ghl_webhook_secret_arn }
       ]

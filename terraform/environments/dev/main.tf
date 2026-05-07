@@ -26,14 +26,14 @@ provider "aws" {
 module "networking" {
   source = "../../modules/networking"
 
-  project                     = var.project
-  env                         = var.env
-  aws_region                  = var.aws_region
-  vpc_cidr                    = var.vpc_cidr
-  availability_zones          = var.availability_zones
-  public_subnet_cidrs         = var.public_subnet_cidrs
-  private_ecs_subnet_cidrs    = var.private_ecs_subnet_cidrs
-  private_aurora_subnet_cidrs = var.private_aurora_subnet_cidrs
+  project                       = var.project
+  env                           = var.env
+  aws_region                    = var.aws_region
+  vpc_cidr                      = var.vpc_cidr
+  availability_zones            = var.availability_zones
+  public_subnet_cidrs           = var.public_subnet_cidrs
+  private_ecs_subnet_cidrs      = var.private_ecs_subnet_cidrs
+  private_database_subnet_cidrs = var.private_database_subnet_cidrs
 }
 
 module "dns_certificate" {
@@ -53,22 +53,23 @@ module "dns_certificate" {
   create_origin_record = false
 }
 
-module "aurora" {
-  source = "../../modules/aurora"
+module "rds" {
+  source = "../../modules/rds"
 
-  project                   = var.project
-  env                       = var.env
-  aws_region                = var.aws_region
-  aurora_subnet_ids         = module.networking.private_aurora_subnet_ids
-  rds_proxy_subnet_ids      = module.networking.private_ecs_subnet_ids
-  aurora_sg_id              = module.networking.aurora_sg_id
-  rds_proxy_sg_id           = module.networking.rds_proxy_sg_id
-  database_name             = var.database_name
-  master_username           = var.master_username
-  engine_version            = var.aurora_engine_version
-  aurora_min_capacity       = var.aurora_min_capacity
-  aurora_max_capacity       = var.aurora_max_capacity
-  aurora_auto_pause_seconds = var.aurora_auto_pause_seconds
+  project                  = var.project
+  env                      = var.env
+  aws_region               = var.aws_region
+  database_subnet_ids      = module.networking.private_database_subnet_ids
+  rds_proxy_subnet_ids     = module.networking.private_ecs_subnet_ids
+  database_sg_id           = module.networking.database_sg_id
+  rds_proxy_sg_id          = module.networking.rds_proxy_sg_id
+  database_name            = var.database_name
+  master_username          = var.master_username
+  engine_version           = var.postgres_engine_version
+  instance_class           = var.rds_instance_class
+  allocated_storage_gb     = var.rds_allocated_storage_gb
+  max_allocated_storage_gb = var.rds_max_allocated_storage_gb
+  multi_az                 = var.rds_multi_az
 }
 
 module "iam" {
@@ -77,9 +78,9 @@ module "iam" {
   project               = var.project
   env                   = var.env
   aws_region            = var.aws_region
-  aurora_secret_arn     = module.aurora.master_user_secret_arn
-  aurora_kms_key_arn    = module.aurora.aurora_kms_key_arn
-  rds_proxy_resource_id = module.aurora.rds_proxy_resource_id
+  database_secret_arn   = module.rds.master_user_secret_arn
+  database_kms_key_arn  = module.rds.database_kms_key_arn
+  rds_proxy_resource_id = module.rds.rds_proxy_resource_id
   database_username     = var.app_database_username
   ecr_repository_name   = var.ecr_repository_name
   ecs_log_group_name    = var.ecs_log_group_name
@@ -102,8 +103,8 @@ module "ecs" {
   ecs_log_group_name     = var.ecs_log_group_name
   database_name          = var.database_name
   database_username      = var.app_database_username
-  aurora_secret_arn      = module.aurora.master_user_secret_arn
-  rds_proxy_endpoint     = module.aurora.rds_proxy_endpoint
+  database_secret_arn    = module.rds.master_user_secret_arn
+  rds_proxy_endpoint     = module.rds.rds_proxy_endpoint
   ghl_webhook_secret_arn = module.iam.ghl_webhook_secret_arn
   acm_cert_arn           = module.dns_certificate.certificate_arn
   create_https_listener  = true
@@ -156,5 +157,5 @@ module "observability" {
   alb_arn_suffix              = module.ecs.alb_arn_suffix
   api_target_group_arn_suffix = module.ecs.api_target_group_arn_suffix
   cloudfront_distribution_id  = module.cloudfront.distribution_id
-  aurora_cluster_identifier   = module.aurora.cluster_identifier
+  db_instance_identifier      = module.rds.db_instance_identifier
 }

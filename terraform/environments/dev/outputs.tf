@@ -13,9 +13,9 @@ output "private_ecs_subnet_ids" {
   value       = module.networking.private_ecs_subnet_ids
 }
 
-output "private_aurora_subnet_ids" {
-  description = "Private subnet IDs intended for Aurora."
-  value       = module.networking.private_aurora_subnet_ids
+output "private_database_subnet_ids" {
+  description = "Private subnet IDs intended for RDS PostgreSQL."
+  value       = module.networking.private_database_subnet_ids
 }
 
 output "alb_sg_id" {
@@ -33,34 +33,34 @@ output "rds_proxy_sg_id" {
   value       = module.networking.rds_proxy_sg_id
 }
 
-output "aurora_sg_id" {
-  description = "Security group ID for Aurora PostgreSQL."
-  value       = module.networking.aurora_sg_id
+output "database_sg_id" {
+  description = "Security group ID for RDS PostgreSQL."
+  value       = module.networking.database_sg_id
 }
 
-output "aurora_cluster_identifier" {
-  description = "Aurora cluster identifier."
-  value       = module.aurora.cluster_identifier
+output "db_instance_identifier" {
+  description = "RDS DB instance identifier."
+  value       = module.rds.db_instance_identifier
 }
 
-output "aurora_secret_arn" {
-  description = "RDS-managed Secrets Manager ARN for Aurora credentials."
-  value       = module.aurora.master_user_secret_arn
+output "database_secret_arn" {
+  description = "RDS-managed Secrets Manager ARN for database credentials."
+  value       = module.rds.master_user_secret_arn
 }
 
 output "rds_proxy_endpoint" {
   description = "RDS Proxy endpoint hostname."
-  value       = module.aurora.rds_proxy_endpoint
+  value       = module.rds.rds_proxy_endpoint
 }
 
 output "rds_proxy_name" {
   description = "RDS Proxy name."
-  value       = module.aurora.rds_proxy_name
+  value       = module.rds.rds_proxy_name
 }
 
 output "rds_proxy_resource_id" {
   description = "RDS Proxy resource ID used in rds-db:connect ARNs."
-  value       = module.aurora.rds_proxy_resource_id
+  value       = module.rds.rds_proxy_resource_id
 }
 
 output "ghl_webhook_secret_arn" {

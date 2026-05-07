@@ -38,7 +38,7 @@ variable "cloudfront_distribution_id" {
   type        = string
 }
 
-variable "aurora_cluster_identifier" {
-  description = "Aurora cluster identifier."
+variable "db_instance_identifier" {
+  description = "RDS DB instance identifier."
   type        = string
 }

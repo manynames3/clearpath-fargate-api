@@ -18,9 +18,9 @@ output "private_ecs_subnet_ids" {
   value       = [for subnet in aws_subnet.private_ecs : subnet.id]
 }
 
-output "private_aurora_subnet_ids" {
-  description = "Private subnet IDs intended for Aurora PostgreSQL."
-  value       = [for subnet in aws_subnet.private_aurora : subnet.id]
+output "private_database_subnet_ids" {
+  description = "Private subnet IDs intended for RDS PostgreSQL."
+  value       = [for subnet in aws_subnet.private_database : subnet.id]
 }
 
 output "alb_sg_id" {
@@ -38,9 +38,9 @@ output "rds_proxy_sg_id" {
   value       = aws_security_group.rds_proxy.id
 }
 
-output "aurora_sg_id" {
-  description = "Security group ID for Aurora PostgreSQL."
-  value       = aws_security_group.aurora.id
+output "database_sg_id" {
+  description = "Security group ID for RDS PostgreSQL."
+  value       = aws_security_group.database.id
 }
 
 output "vpc_endpoint_sg_id" {

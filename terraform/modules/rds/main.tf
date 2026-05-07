@@ -9,13 +9,13 @@ locals {
     ManagedBy   = "terraform"
   }
 
-  cluster_identifier            = "${var.project}-${var.env}"
+  db_identifier                 = "${var.project}-${var.env}"
   rds_os_metrics_log_group_name = "RDSOSMetrics"
   rds_os_metrics_log_group_arn  = "arn:${data.aws_partition.current.partition}:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:${local.rds_os_metrics_log_group_name}"
   rds_proxy_resource_id         = element(split(":", aws_db_proxy.main.arn), 6)
 }
 
-data "aws_iam_policy_document" "aurora_kms" {
+data "aws_iam_policy_document" "database_kms" {
   #checkov:skip=CKV_AWS_111:KMS key policies use Resource "*" to refer to the current key; principals and service constraints limit use.
   #checkov:skip=CKV_AWS_356:KMS key policies use Resource "*" to refer to the current key; principals and service constraints limit use.
   #checkov:skip=CKV_AWS_109:Account-root administration is scoped to this key policy and required to avoid orphaned KMS keys.
@@ -131,35 +131,35 @@ data "aws_iam_policy_document" "aurora_kms" {
   }
 }
 
-resource "aws_kms_key" "aurora" {
-  description             = "KMS key for ${var.project} ${var.env} Aurora storage and managed secret"
+resource "aws_kms_key" "database" {
+  description             = "KMS key for ${var.project} ${var.env} RDS PostgreSQL storage and managed secret"
   deletion_window_in_days = 7
   enable_key_rotation     = true
-  policy                  = data.aws_iam_policy_document.aurora_kms.json
+  policy                  = data.aws_iam_policy_document.database_kms.json
 
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.env}-aurora"
+    Name = "${var.project}-${var.env}-database"
   })
 }
 
-resource "aws_kms_alias" "aurora" {
-  name          = "alias/${var.project}-${var.env}-aurora"
-  target_key_id = aws_kms_key.aurora.key_id
+resource "aws_kms_alias" "database" {
+  name          = "alias/${var.project}-${var.env}-database"
+  target_key_id = aws_kms_key.database.key_id
 }
 
-resource "aws_db_subnet_group" "aurora" {
-  name       = "${var.project}-${var.env}-aurora"
-  subnet_ids = var.aurora_subnet_ids
+resource "aws_db_subnet_group" "database" {
+  name       = "${var.project}-${var.env}-database"
+  subnet_ids = var.database_subnet_ids
 
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.env}-aurora"
+    Name = "${var.project}-${var.env}-database"
   })
 }
 
-resource "aws_rds_cluster_parameter_group" "main" {
-  name        = "${var.project}-${var.env}-aurora-postgres15"
-  family      = "aurora-postgresql15"
-  description = "Aurora PostgreSQL query logging for ${var.project} ${var.env}"
+resource "aws_db_parameter_group" "main" {
+  name        = "${var.project}-${var.env}-postgres15"
+  family      = "postgres15"
+  description = "RDS PostgreSQL query logging for ${var.project} ${var.env}"
 
   parameter {
     name  = "log_statement"
@@ -171,52 +171,21 @@ resource "aws_rds_cluster_parameter_group" "main" {
     value = "1000"
   }
 
-  tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.env}-aurora-postgres15"
-  })
-}
-
-resource "aws_rds_cluster" "main" {
-  #checkov:skip=CKV_AWS_139:Deletion protection is intentionally disabled for demo teardown.
-  #checkov:skip=CKV_AWS_133:Managed master user password creates the secret; rotation is handled by RDS-managed credentials.
-  #checkov:skip=CKV2_AWS_8:AWS Backup plan is intentionally omitted because this portfolio environment is disposable and teardown-first.
-  cluster_identifier                  = local.cluster_identifier
-  database_name                       = var.database_name
-  db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.main.name
-  db_subnet_group_name                = aws_db_subnet_group.aurora.name
-  deletion_protection                 = false
-  enabled_cloudwatch_logs_exports     = ["postgresql"]
-  engine                              = "aurora-postgresql"
-  engine_mode                         = "provisioned"
-  engine_version                      = var.engine_version
-  iam_database_authentication_enabled = true
-  kms_key_id                          = aws_kms_key.aurora.arn
-  manage_master_user_password         = true
-  master_user_secret_kms_key_id       = aws_kms_key.aurora.arn
-  master_username                     = var.master_username
-  skip_final_snapshot                 = true
-  storage_encrypted                   = true
-  storage_type                        = "aurora"
-  vpc_security_group_ids              = [var.aurora_sg_id]
-
-  backup_retention_period = var.backup_retention_days
-  copy_tags_to_snapshot   = true
-
-  serverlessv2_scaling_configuration {
-    max_capacity             = var.aurora_max_capacity
-    min_capacity             = var.aurora_min_capacity
-    seconds_until_auto_pause = var.aurora_auto_pause_seconds
+  parameter {
+    name         = "rds.force_ssl"
+    value        = "1"
+    apply_method = "pending-reboot"
   }
 
   tags = merge(local.common_tags, {
-    Name = local.cluster_identifier
+    Name = "${var.project}-${var.env}-postgres15"
   })
 }
 
 resource "aws_cloudwatch_log_group" "rds_os_metrics" {
   name              = local.rds_os_metrics_log_group_name
   retention_in_days = 365
-  kms_key_id        = aws_kms_key.aurora.arn
+  kms_key_id        = aws_kms_key.database.arn
 
   tags = merge(local.common_tags, {
     Name = "${var.project}-${var.env}-rds-os-metrics"
@@ -267,24 +236,45 @@ resource "aws_iam_role_policy" "rds_enhanced_monitoring" {
   policy = data.aws_iam_policy_document.rds_enhanced_monitoring.json
 }
 
-resource "aws_rds_cluster_instance" "main" {
-  identifier                            = "${local.cluster_identifier}-1"
-  auto_minor_version_upgrade            = true
-  ca_cert_identifier                    = var.ca_cert_identifier
-  cluster_identifier                    = aws_rds_cluster.main.id
-  db_subnet_group_name                  = aws_db_subnet_group.aurora.name
-  engine                                = aws_rds_cluster.main.engine
-  engine_version                        = aws_rds_cluster.main.engine_version
-  instance_class                        = "db.serverless"
-  monitoring_interval                   = 60
-  monitoring_role_arn                   = aws_iam_role.rds_enhanced_monitoring.arn
-  performance_insights_enabled          = true
-  performance_insights_kms_key_id       = aws_kms_key.aurora.arn
-  performance_insights_retention_period = 7
-  publicly_accessible                   = false
+resource "aws_db_instance" "main" {
+  #checkov:skip=CKV_AWS_157:Single-AZ is intentional for the current cost-controlled demo stage; enable var.multi_az for production.
+  #checkov:skip=CKV_AWS_133:RDS-managed master user password creates the secret without plaintext in Terraform state.
+  #checkov:skip=CKV_AWS_16:Final snapshots are intentionally skipped for teardown-first portfolio demos.
+  #checkov:skip=CKV_AWS_293:Deletion protection is intentionally disabled for teardown-first portfolio demos.
+  #checkov:skip=CKV2_AWS_8:AWS Backup plan is intentionally omitted because this portfolio environment is disposable and teardown-first.
+  identifier                          = local.db_identifier
+  allocated_storage                   = var.allocated_storage_gb
+  max_allocated_storage               = var.max_allocated_storage_gb
+  auto_minor_version_upgrade          = true
+  backup_retention_period             = var.backup_retention_days
+  ca_cert_identifier                  = var.ca_cert_identifier
+  copy_tags_to_snapshot               = true
+  db_name                             = var.database_name
+  db_subnet_group_name                = aws_db_subnet_group.database.name
+  deletion_protection                 = false
+  enabled_cloudwatch_logs_exports     = ["postgresql", "upgrade"]
+  engine                              = "postgres"
+  engine_version                      = var.engine_version
+  iam_database_authentication_enabled = true
+  instance_class                      = var.instance_class
+  kms_key_id                          = aws_kms_key.database.arn
+  manage_master_user_password         = true
+  master_user_secret_kms_key_id       = aws_kms_key.database.arn
+  monitoring_interval                 = 60
+  monitoring_role_arn                 = aws_iam_role.rds_enhanced_monitoring.arn
+  multi_az                            = var.multi_az
+  parameter_group_name                = aws_db_parameter_group.main.name
+  performance_insights_enabled        = true
+  performance_insights_kms_key_id     = aws_kms_key.database.arn
+  publicly_accessible                 = false
+  skip_final_snapshot                 = true
+  storage_encrypted                   = true
+  storage_type                        = "gp3"
+  username                            = var.master_username
+  vpc_security_group_ids              = [var.database_sg_id]
 
   tags = merge(local.common_tags, {
-    Name = "${local.cluster_identifier}-1"
+    Name = local.db_identifier
   })
 }
 
@@ -310,18 +300,18 @@ resource "aws_iam_role" "rds_proxy" {
 
 data "aws_iam_policy_document" "rds_proxy" {
   statement {
-    sid = "ReadAuroraManagedSecret"
+    sid = "ReadRDSManagedSecret"
     actions = [
       "secretsmanager:DescribeSecret",
       "secretsmanager:GetSecretValue"
     ]
-    resources = [aws_rds_cluster.main.master_user_secret[0].secret_arn]
+    resources = [aws_db_instance.main.master_user_secret[0].secret_arn]
   }
 
   statement {
-    sid       = "DecryptAuroraManagedSecret"
+    sid       = "DecryptRDSManagedSecret"
     actions   = ["kms:Decrypt"]
-    resources = [aws_kms_key.aurora.arn]
+    resources = [aws_kms_key.database.arn]
 
     condition {
       test     = "StringEquals"
@@ -349,9 +339,9 @@ resource "aws_db_proxy" "main" {
 
   auth {
     auth_scheme = "SECRETS"
-    description = "Aurora managed master secret"
+    description = "RDS managed master secret"
     iam_auth    = "REQUIRED"
-    secret_arn  = aws_rds_cluster.main.master_user_secret[0].secret_arn
+    secret_arn  = aws_db_instance.main.master_user_secret[0].secret_arn
   }
 
   tags = merge(local.common_tags, {
@@ -372,7 +362,7 @@ resource "aws_db_proxy_default_target_group" "main" {
 }
 
 resource "aws_db_proxy_target" "main" {
-  db_cluster_identifier = aws_rds_cluster.main.id
-  db_proxy_name         = aws_db_proxy.main.name
-  target_group_name     = aws_db_proxy_default_target_group.main.name
+  db_instance_identifier = aws_db_instance.main.identifier
+  db_proxy_name          = aws_db_proxy.main.name
+  target_group_name      = aws_db_proxy_default_target_group.main.name
 }

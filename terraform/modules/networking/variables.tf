@@ -33,8 +33,8 @@ variable "private_ecs_subnet_cidrs" {
   type        = list(string)
 }
 
-variable "private_aurora_subnet_cidrs" {
-  description = "Private subnet CIDRs for Aurora PostgreSQL."
+variable "private_database_subnet_cidrs" {
+  description = "Private subnet CIDRs for RDS PostgreSQL."
   type        = list(string)
 }
 

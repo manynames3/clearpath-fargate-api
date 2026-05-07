@@ -37,8 +37,8 @@ terraform destroy
 
 ```bash
 aws ecs list-clusters
-aws rds describe-db-clusters --query 'DBClusters[?starts_with(DBClusterIdentifier, `clearpath-api`)]'
+aws rds describe-db-instances --query 'DBInstances[?starts_with(DBInstanceIdentifier, `clearpath-api`)]'
 aws cloudfront list-distributions --query 'DistributionList.Items[?Comment==`clearpath-api`]'
 ```
 
-The expected result after teardown is no Clearpath ECS clusters, Aurora clusters, or CloudFront distributions.
+The expected result after teardown is no Clearpath ECS clusters, RDS database instances, or CloudFront distributions.

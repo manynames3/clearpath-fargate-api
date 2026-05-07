@@ -48,44 +48,49 @@ variable "private_ecs_subnet_cidrs" {
   }
 }
 
-variable "private_aurora_subnet_cidrs" {
-  description = "Private subnet CIDRs for Aurora PostgreSQL."
+variable "private_database_subnet_cidrs" {
+  description = "Private subnet CIDRs for RDS PostgreSQL."
   type        = list(string)
 
   validation {
-    condition     = length(var.private_aurora_subnet_cidrs) == 2
-    error_message = "Phase 1 expects exactly two Aurora subnet CIDRs."
+    condition     = length(var.private_database_subnet_cidrs) == 2
+    error_message = "Phase 1 expects exactly two database subnet CIDRs."
   }
 }
 
 variable "database_name" {
-  description = "Initial Aurora database name."
+  description = "Initial RDS database name."
   type        = string
 }
 
 variable "master_username" {
-  description = "Aurora master username."
+  description = "RDS master username."
   type        = string
 }
 
-variable "aurora_engine_version" {
-  description = "Aurora PostgreSQL engine version."
+variable "postgres_engine_version" {
+  description = "RDS PostgreSQL engine version."
   type        = string
 }
 
-variable "aurora_min_capacity" {
-  description = "Minimum Aurora Serverless v2 ACUs."
+variable "rds_instance_class" {
+  description = "RDS instance class for the current cost-controlled stage."
+  type        = string
+}
+
+variable "rds_allocated_storage_gb" {
+  description = "Initial RDS allocated storage in GiB."
   type        = number
 }
 
-variable "aurora_max_capacity" {
-  description = "Maximum Aurora Serverless v2 ACUs."
+variable "rds_max_allocated_storage_gb" {
+  description = "Maximum RDS storage autoscaling limit in GiB."
   type        = number
 }
 
-variable "aurora_auto_pause_seconds" {
-  description = "Idle seconds before Aurora Serverless v2 auto-pauses."
-  type        = number
+variable "rds_multi_az" {
+  description = "Whether to run RDS in Multi-AZ mode. Keep false for cost-controlled demos."
+  type        = bool
 }
 
 variable "app_database_username" {

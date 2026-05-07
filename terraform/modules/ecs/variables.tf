@@ -59,7 +59,7 @@ variable "ecs_log_group_name" {
 }
 
 variable "database_name" {
-  description = "Aurora database name."
+  description = "RDS database name."
   type        = string
 }
 
@@ -68,8 +68,8 @@ variable "database_username" {
   type        = string
 }
 
-variable "aurora_secret_arn" {
-  description = "Aurora managed credential secret ARN."
+variable "database_secret_arn" {
+  description = "RDS-managed credential secret ARN."
   type        = string
 }
 

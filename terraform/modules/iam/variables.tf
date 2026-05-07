@@ -13,13 +13,13 @@ variable "aws_region" {
   type        = string
 }
 
-variable "aurora_secret_arn" {
-  description = "Aurora managed master user secret ARN."
+variable "database_secret_arn" {
+  description = "RDS-managed master user secret ARN."
   type        = string
 }
 
-variable "aurora_kms_key_arn" {
-  description = "Aurora KMS key ARN used for the RDS-managed secret."
+variable "database_kms_key_arn" {
+  description = "RDS database KMS key ARN used for the RDS-managed secret."
   type        = string
 }
 

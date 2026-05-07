@@ -134,7 +134,7 @@ data "aws_iam_policy_document" "ecs_task" {
       "secretsmanager:GetSecretValue"
     ]
     resources = [
-      var.aurora_secret_arn,
+      var.database_secret_arn,
       aws_secretsmanager_secret.ghl_webhook.arn
     ]
   }
@@ -142,7 +142,7 @@ data "aws_iam_policy_document" "ecs_task" {
   statement {
     sid       = "DecryptRuntimeSecrets"
     actions   = ["kms:Decrypt"]
-    resources = [var.aurora_kms_key_arn, aws_kms_key.app_secrets.arn]
+    resources = [var.database_kms_key_arn, aws_kms_key.app_secrets.arn]
 
     condition {
       test     = "StringEquals"

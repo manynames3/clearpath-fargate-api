@@ -27,8 +27,8 @@ locals {
     }
   }
 
-  private_aurora_subnets = {
-    for idx, cidr in var.private_aurora_subnet_cidrs : idx => {
+  private_database_subnets = {
+    for idx, cidr in var.private_database_subnet_cidrs : idx => {
       cidr = cidr
       az   = var.availability_zones[idx]
     }
@@ -92,8 +92,8 @@ resource "aws_subnet" "private_ecs" {
   })
 }
 
-resource "aws_subnet" "private_aurora" {
-  for_each = local.private_aurora_subnets
+resource "aws_subnet" "private_database" {
+  for_each = local.private_database_subnets
 
   vpc_id                  = aws_vpc.main.id
   cidr_block              = each.value.cidr
@@ -101,8 +101,8 @@ resource "aws_subnet" "private_aurora" {
   map_public_ip_on_launch = false
 
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.env}-aurora-${each.value.az}"
-    Tier = "private-aurora"
+    Name = "${var.project}-${var.env}-database-${each.value.az}"
+    Tier = "private-database"
   })
 }
 
@@ -165,19 +165,19 @@ resource "aws_route_table_association" "private_ecs" {
   route_table_id = aws_route_table.private_ecs.id
 }
 
-resource "aws_route_table" "private_aurora" {
+resource "aws_route_table" "private_database" {
   vpc_id = aws_vpc.main.id
 
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.env}-private-aurora"
+    Name = "${var.project}-${var.env}-private-database"
   })
 }
 
-resource "aws_route_table_association" "private_aurora" {
-  for_each = aws_subnet.private_aurora
+resource "aws_route_table_association" "private_database" {
+  for_each = aws_subnet.private_database
 
   subnet_id      = each.value.id
-  route_table_id = aws_route_table.private_aurora.id
+  route_table_id = aws_route_table.private_database.id
 }
 
 resource "aws_vpc_endpoint" "s3" {
@@ -390,7 +390,7 @@ resource "aws_security_group" "ecs" {
 }
 
 resource "aws_security_group" "rds_proxy" {
-  #checkov:skip=CKV2_AWS_5:Attached to RDS Proxy in the Aurora phase.
+  #checkov:skip=CKV2_AWS_5:Attached to RDS Proxy in the database phase.
   name_prefix            = "${var.project}-${var.env}-rds-proxy-"
   description            = "RDS Proxy accepts PostgreSQL from ECS only"
   vpc_id                 = aws_vpc.main.id
@@ -401,15 +401,15 @@ resource "aws_security_group" "rds_proxy" {
   })
 }
 
-resource "aws_security_group" "aurora" {
-  #checkov:skip=CKV2_AWS_5:Attached to Aurora cluster in the Aurora phase.
-  name_prefix            = "${var.project}-${var.env}-aurora-"
-  description            = "Aurora accepts PostgreSQL from RDS Proxy only"
+resource "aws_security_group" "database" {
+  #checkov:skip=CKV2_AWS_5:Attached to RDS PostgreSQL in the database phase.
+  name_prefix            = "${var.project}-${var.env}-database-"
+  description            = "RDS PostgreSQL accepts traffic from RDS Proxy only"
   vpc_id                 = aws_vpc.main.id
   revoke_rules_on_delete = true
 
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.env}-aurora"
+    Name = "${var.project}-${var.env}-database"
   })
 }
 
@@ -517,21 +517,21 @@ resource "aws_vpc_security_group_ingress_rule" "rds_proxy_from_ecs" {
   })
 }
 
-resource "aws_vpc_security_group_egress_rule" "rds_proxy_to_aurora" {
+resource "aws_vpc_security_group_egress_rule" "rds_proxy_to_database" {
   security_group_id            = aws_security_group.rds_proxy.id
-  description                  = "PostgreSQL to Aurora only"
+  description                  = "PostgreSQL to RDS PostgreSQL only"
   from_port                    = 5432
   to_port                      = 5432
   ip_protocol                  = "tcp"
-  referenced_security_group_id = aws_security_group.aurora.id
+  referenced_security_group_id = aws_security_group.database.id
 
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.env}-rds-proxy-to-aurora"
+    Name = "${var.project}-${var.env}-rds-proxy-to-database"
   })
 }
 
-resource "aws_vpc_security_group_ingress_rule" "aurora_from_rds_proxy" {
-  security_group_id            = aws_security_group.aurora.id
+resource "aws_vpc_security_group_ingress_rule" "database_from_rds_proxy" {
+  security_group_id            = aws_security_group.database.id
   description                  = "PostgreSQL from RDS Proxy only"
   from_port                    = 5432
   to_port                      = 5432
@@ -539,6 +539,6 @@ resource "aws_vpc_security_group_ingress_rule" "aurora_from_rds_proxy" {
   referenced_security_group_id = aws_security_group.rds_proxy.id
 
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.env}-aurora-from-rds-proxy"
+    Name = "${var.project}-${var.env}-database-from-rds-proxy"
   })
 }

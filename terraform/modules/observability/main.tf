@@ -69,11 +69,11 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 12
         height = 6
         properties = {
-          title  = "Aurora ACU Utilization"
+          title  = "RDS CPU and Connections"
           region = var.aws_region
           metrics = [
-            ["AWS/RDS", "ServerlessDatabaseCapacity", "DBClusterIdentifier", var.aurora_cluster_identifier],
-            [".", "ACUUtilization", ".", "."]
+            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", var.db_instance_identifier],
+            [".", "DatabaseConnections", ".", "."]
           ]
           stat   = "Average"
           period = 300
