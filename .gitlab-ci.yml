@@ -1,0 +1,39 @@
+# GitLab CI mirror for Terraform validation.
+
+stages:
+  - validate
+
+variables:
+  TF_ROOT: terraform/environments/dev
+
+terraform:fmt:
+  stage: validate
+  image:
+    name: hashicorp/terraform:1.14.9
+    entrypoint: [""]
+  script:
+    - terraform fmt -check -recursive terraform
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+terraform:validate:
+  stage: validate
+  image:
+    name: hashicorp/terraform:1.14.9
+    entrypoint: [""]
+  script:
+    - cd "$TF_ROOT"
+    - terraform init -backend=false
+    - terraform validate
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+checkov:scan:
+  stage: validate
+  image:
+    name: bridgecrew/checkov:latest
+    entrypoint: [""]
+  script:
+    - checkov -d terraform/ --framework terraform --quiet
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'

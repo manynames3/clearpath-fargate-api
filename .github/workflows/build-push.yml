@@ -1,0 +1,80 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Push image and force a new ECS deployment
+        required: true
+        default: false
+        type: boolean
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/build-push.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests
+        run: pytest
+
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: app/Dockerfile
+
+  build-push:
+    needs: test
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push
+        run: |
+          IMAGE_URI="${{ secrets.ECR_REGISTRY }}/${ECR_REPOSITORY}"
+          docker build -t "$IMAGE_URI:latest" -t "$IMAGE_URI:${{ github.sha }}" app/
+          docker push "$IMAGE_URI:latest"
+          docker push "$IMAGE_URI:${{ github.sha }}"
+
+      - name: Force new ECS deployment
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --force-new-deployment
