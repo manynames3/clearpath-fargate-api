@@ -15,7 +15,7 @@ locals {
 }
 
 resource "aws_wafv2_web_acl" "api" {
-  #checkov:skip=CKV2_AWS_31:WAF request logging is omitted for low-cost demo teardown; sampled requests and CloudWatch metrics are enabled.
+  #checkov:skip=CKV2_AWS_31:WAF request logging is omitted for low-cost ephemeral teardown; sampled requests and CloudWatch metrics are enabled.
   name        = "${var.project}-${var.env}-api-waf"
   description = "WAF for Clearpath API CloudFront distribution"
   scope       = "CLOUDFRONT"
@@ -195,10 +195,10 @@ resource "aws_cloudfront_response_headers_policy" "security" {
 }
 
 resource "aws_cloudfront_distribution" "api" {
-  #checkov:skip=CKV_AWS_86:CloudFront access logging is omitted for low-cost demo teardown; WAF metrics and ECS logs remain enabled.
+  #checkov:skip=CKV_AWS_86:CloudFront access logging is omitted for low-cost ephemeral teardown; WAF metrics and ECS logs remain enabled.
   #checkov:skip=CKV_AWS_305:This is an API distribution, not a website; unknown root paths should flow to the API 404 handler.
-  #checkov:skip=CKV_AWS_374:Origin failover is intentionally omitted because this demo runs one regional ALB origin.
-  #checkov:skip=CKV_AWS_310:Origin group failover is intentionally omitted for the single-region demo architecture.
+  #checkov:skip=CKV_AWS_374:Origin failover is intentionally omitted because this environment runs one regional ALB origin.
+  #checkov:skip=CKV_AWS_310:Origin group failover is intentionally omitted for the single-region architecture.
   enabled         = true
   is_ipv6_enabled = true
   comment         = "clearpath-api"

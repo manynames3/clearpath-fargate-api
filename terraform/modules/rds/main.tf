@@ -237,11 +237,11 @@ resource "aws_iam_role_policy" "rds_enhanced_monitoring" {
 }
 
 resource "aws_db_instance" "main" {
-  #checkov:skip=CKV_AWS_157:Single-AZ is intentional for the current cost-controlled demo stage; enable var.multi_az for production.
+  #checkov:skip=CKV_AWS_157:Single-AZ is intentional for the current cost-controlled dev stage; enable var.multi_az for production.
   #checkov:skip=CKV_AWS_133:RDS-managed master user password creates the secret without plaintext in Terraform state.
-  #checkov:skip=CKV_AWS_16:Final snapshots are controlled by var.skip_final_snapshot; demo defaults skip them for teardown, production should set false.
-  #checkov:skip=CKV_AWS_293:Deletion protection is controlled by var.deletion_protection; demo defaults disable it for teardown, production should enable it.
-  #checkov:skip=CKV2_AWS_8:AWS Backup plan is intentionally omitted because this demo environment is disposable and teardown-first.
+  #checkov:skip=CKV_AWS_16:Final snapshots are controlled by var.skip_final_snapshot; dev defaults skip them for teardown, production should set false.
+  #checkov:skip=CKV_AWS_293:Deletion protection is controlled by var.deletion_protection; dev defaults disable it for teardown, production should enable it.
+  #checkov:skip=CKV2_AWS_8:AWS Backup plan is intentionally omitted because this dev environment is disposable and teardown-first.
   identifier                          = local.db_identifier
   allocated_storage                   = var.allocated_storage_gb
   max_allocated_storage               = var.max_allocated_storage_gb

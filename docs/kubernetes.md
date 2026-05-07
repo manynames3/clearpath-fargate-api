@@ -1,8 +1,8 @@
 # Kubernetes Track
 
-This repository keeps ECS Fargate as the implemented AWS deployment path and adds Kubernetes as an optional platform track. That is intentional: ECS/Fargate demonstrates AWS-native container operations, while the Kubernetes manifests show the same API can run on a standard orchestrator such as EKS.
+This repository keeps ECS Fargate as the implemented AWS deployment path and adds Kubernetes as an optional platform track. That is intentional: ECS/Fargate provides AWS-native container operations, while the Kubernetes manifests show the same API can run on a standard orchestrator such as EKS.
 
-No EKS cluster is deployed by default. EKS has a control plane cost and adds operational overhead, so the Kubernetes layer is source-only until there is a deliberate demo window.
+No EKS cluster is deployed by default. EKS has a control plane cost and adds operational overhead, so the Kubernetes layer is source-only until there is a deliberate validation window.
 
 ## What Is Included
 
@@ -17,7 +17,7 @@ The `k8s/` directory contains Kustomize manifests for:
 - PodDisruptionBudget
 - NetworkPolicy
 - EKS overlay with AWS Load Balancer Controller Ingress annotations
-- Local overlay for kind/minikube health-check demos
+- Local overlay for kind/minikube health checks
 
 ## Architecture
 
@@ -31,7 +31,7 @@ flowchart LR
     pods --> secrets["AWS Secrets Manager via IAM"]
 ```
 
-## Local Kubernetes Demo
+## Local Kubernetes Validation
 
 The local overlay is intended for a quick Kubernetes smoke test. It skips database initialization so `/health` can prove the container, probes, Service, and Deployment work without running AWS resources.
 
@@ -71,9 +71,9 @@ Keeping both tracks documents two practical container deployment options:
 
 - ECS Fargate shows AWS-native production container deployment.
 - Kubernetes manifests show orchestrator literacy: probes, HPA, PDB, NetworkPolicy, Service, Ingress, overlays.
-- The repo avoids paying for EKS until screenshots are needed.
-- ECS remains the cost-controlled AWS demo path, while EKS/Kubernetes is the option when a team needs Kubernetes-standard operations.
+- The repo avoids paying for EKS until an EKS deployment is intentionally needed.
+- ECS remains the cost-controlled AWS path, while EKS/Kubernetes is the option when a team needs Kubernetes-standard operations.
 
 ## Platform Decision
 
-The main deployment path is ECS Fargate because it is cost-effective and AWS-native for this API. The Kubernetes/EKS track demonstrates portable container operations through Deployment health probes, autoscaling, disruption budgets, network policy, and ingress. EKS becomes the better fit if the organization standardizes on Kubernetes or needs platform-level consistency across services; it is not required for a small standalone API by default.
+The main deployment path is ECS Fargate because it is cost-effective and AWS-native for this API. The Kubernetes/EKS track provides portable container operations through Deployment health probes, autoscaling, disruption budgets, network policy, and ingress. EKS becomes the better fit if the organization standardizes on Kubernetes or needs platform-level consistency across services; it is not required for a small standalone API by default.

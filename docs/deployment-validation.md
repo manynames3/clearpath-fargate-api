@@ -1,11 +1,11 @@
-# Portfolio Demo
+# Deployment Validation
 
 This project should be deployed only long enough to capture evidence, then destroyed. RDS PostgreSQL is implemented for the current workload because it is cheaper and simpler than Aurora, while Aurora remains a documented upgrade path.
 
-## Short-Lived AWS Demo
+## Short-Lived AWS Validation
 
-Run this only when ready to spend a small amount for screenshots and validation. Always review the plan before apply.
-Read [cost-estimate.md](cost-estimate.md) before starting the demo window.
+Run this only during an intentional validation window. Always review the plan before apply.
+Read [cost-estimate.md](cost-estimate.md) before applying in AWS.
 
 ```bash
 cd terraform/environments/dev
@@ -31,7 +31,7 @@ After apply, capture:
 - GoHighLevel webhook test returning `{"status":"accepted"}` and creating a lead
 - `/api/market/gwinnett` response with cache headers
 
-Use [demo-evidence-template.md](demo-evidence-template.md) as the screenshot and command-output checklist. Store screenshots in `docs/screenshots/`.
+Use [deployment-evidence-template.md](deployment-evidence-template.md) as the screenshot and command-output checklist. Store screenshots in `docs/screenshots/`.
 
 Then destroy the stack the same day.
 
@@ -44,7 +44,7 @@ If using manual commands instead of the teardown script, follow [teardown.md](te
 
 ## Production Hardening Notes
 
-The demo defaults prioritize cost and clean teardown. For a real production deployment:
+The default dev settings prioritize cost and clean teardown. For a real production deployment:
 
 - use `terraform/environments/dev/production.tfvars.example` as the starting override file
 - enable RDS Multi-AZ
@@ -59,13 +59,13 @@ The demo defaults prioritize cost and clean teardown. For a real production depl
 
 Aurora PostgreSQL is the future upgrade path when workload patterns justify it: high concurrency, read replica needs, stricter failover goals, or more dynamic capacity scaling.
 
-## Kubernetes Evidence
+## Kubernetes Validation
 
-The repo includes a source-only Kubernetes track under `k8s/`. For a no-AWS Kubernetes screenshot, run the local overlay in kind or minikube and capture:
+The repo includes a source-only Kubernetes track under `k8s/`. For local Kubernetes validation, run the local overlay in kind or minikube and capture:
 
 - `kubectl get deploy,svc,hpa,pdb -n clearpath-api`
 - rollout status for `deployment/clearpath-api`
 - readiness/liveness probe configuration
 - `curl http://localhost:8000/health` through port-forward
 
-Do not create an EKS cluster unless you intentionally want a separate paid demo window.
+Do not create an EKS cluster unless you intentionally want a separate paid validation window.

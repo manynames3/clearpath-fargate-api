@@ -7,7 +7,7 @@ from src.database import get_engine, get_session_factory
 from src.models import Base, FollowUp, Lead, MarketSnapshot, Property
 
 
-async def seed_demo_data() -> None:
+async def seed_sample_data() -> None:
     async with get_engine().begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -20,7 +20,7 @@ async def seed_demo_data() -> None:
         now = datetime.now(timezone.utc)
         leads = [
             Lead(
-                ghl_id="demo-gwinnett-hot",
+                ghl_id="sample-gwinnett-hot",
                 first_name="Maya",
                 last_name="Johnson",
                 phone="+14045550101",
@@ -31,7 +31,7 @@ async def seed_demo_data() -> None:
                 state="GA",
             ),
             Lead(
-                ghl_id="demo-cobb-warm",
+                ghl_id="sample-cobb-warm",
                 first_name="Elliot",
                 last_name="Reed",
                 phone="+17705550102",
@@ -42,7 +42,7 @@ async def seed_demo_data() -> None:
                 state="GA",
             ),
             Lead(
-                ghl_id="demo-fulton-new",
+                ghl_id="sample-fulton-new",
                 first_name="Tanya",
                 last_name="Miles",
                 phone="+16785550103",
@@ -127,8 +127,8 @@ async def seed_demo_data() -> None:
         )
         await session.commit()
 
-    print("Seeded 3 demo leads and 3 market snapshots.")
+    print("Seeded 3 sample leads and 3 market snapshots.")
 
 
 if __name__ == "__main__":
-    asyncio.run(seed_demo_data())
+    asyncio.run(seed_sample_data())

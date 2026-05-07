@@ -82,19 +82,19 @@ variable "backup_retention_days" {
 }
 
 variable "multi_az" {
-  description = "Whether to run RDS in Multi-AZ mode. Keep false for cost-controlled demos; enable for production availability."
+  description = "Whether to run RDS in Multi-AZ mode. Keep false for cost-controlled validation; enable for production availability."
   type        = bool
   default     = false
 }
 
 variable "deletion_protection" {
-  description = "Whether deletion protection is enabled for RDS. Keep false for teardown demos; enable for production."
+  description = "Whether deletion protection is enabled for RDS. Keep false for ephemeral teardown; enable for production."
   type        = bool
   default     = false
 }
 
 variable "skip_final_snapshot" {
-  description = "Whether to skip the final RDS snapshot on destroy. Keep true for teardown demos; set false for production."
+  description = "Whether to skip the final RDS snapshot on destroy. Keep true for ephemeral teardown; set false for production."
   type        = bool
   default     = true
 }

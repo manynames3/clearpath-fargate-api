@@ -89,17 +89,17 @@ variable "rds_max_allocated_storage_gb" {
 }
 
 variable "rds_multi_az" {
-  description = "Whether to run RDS in Multi-AZ mode. Keep false for cost-controlled demos."
+  description = "Whether to run RDS in Multi-AZ mode. Keep false for cost-controlled validation."
   type        = bool
 }
 
 variable "rds_deletion_protection" {
-  description = "Whether deletion protection is enabled for RDS. Keep false for teardown demos; enable for production."
+  description = "Whether deletion protection is enabled for RDS. Keep false for ephemeral teardown; enable for production."
   type        = bool
 }
 
 variable "rds_skip_final_snapshot" {
-  description = "Whether to skip the final RDS snapshot on destroy. Keep true for teardown demos; set false for production."
+  description = "Whether to skip the final RDS snapshot on destroy. Keep true for ephemeral teardown; set false for production."
   type        = bool
 }
 
@@ -130,7 +130,7 @@ variable "ecs_desired_count" {
 }
 
 variable "alb_deletion_protection" {
-  description = "Whether deletion protection is enabled for the ALB. Keep false for teardown demos; enable for production."
+  description = "Whether deletion protection is enabled for the ALB. Keep false for ephemeral teardown; enable for production."
   type        = bool
 }
 

@@ -1,6 +1,6 @@
 # Teardown
 
-This stack is designed to be destroyed after demos.
+This stack is designed to be destroyed after validation runs.
 
 ## Drain ECS
 

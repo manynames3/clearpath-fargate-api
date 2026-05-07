@@ -11,13 +11,13 @@ This repository is built as a production-pattern AWS Terraform project for Clear
 
 This repo is currently built and validated locally only. Do not run `terraform apply` until you intentionally want to create billable AWS resources.
 
-## Short-Lived Demo Strategy
+## Ephemeral Deployment Strategy
 
 This project is designed to be deployed briefly, documented, and destroyed. The architectural value is the Terraform implementation and service design, not leaving ECS, ALB, RDS, RDS Proxy, NAT, CloudFront, and WAF running at idle.
 
 The main database tradeoff is cost-aware and workload-driven: RDS PostgreSQL is implemented because the current workload is modest and predictable, while Aurora is documented as the upgrade path for higher scale or availability requirements.
 
-Capture screenshots during one short AWS demo window, then tear the stack down:
+During an intentional AWS validation run, capture the operational artifacts, then tear the stack down:
 
 - ECS service with healthy Fargate tasks
 - ALB target group health
@@ -28,15 +28,15 @@ Capture screenshots during one short AWS demo window, then tear the stack down:
 - CloudWatch dashboard and alarms
 - Terraform plan/apply/destroy output
 
-See [docs/portfolio-demo.md](docs/portfolio-demo.md) for the short-lived deployment checklist.
-Use [docs/demo-evidence-template.md](docs/demo-evidence-template.md) when capturing screenshots and command output.
-Review [docs/cost-estimate.md](docs/cost-estimate.md) before opening an AWS demo window.
+See [docs/deployment-validation.md](docs/deployment-validation.md) for the short-lived deployment checklist.
+Use [docs/deployment-evidence-template.md](docs/deployment-evidence-template.md) when capturing screenshots and command output.
+Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel webhook setup and payload mapping.
 
 ## Local Quick Start
 
-The fastest local demo is Docker Compose: FastAPI plus Postgres, no AWS resources.
+The fastest local run is Docker Compose: FastAPI plus Postgres, no AWS resources.
 
 ```bash
 cp .env.example .env
@@ -85,14 +85,14 @@ curl -f "http://localhost:8000/api/market/gwinnett"
 curl -X POST http://localhost:8000/webhooks/ghl \
   -H "Content-Type: application/json" \
   -d '{
-    "contact_id": "demo-webhook-001",
+    "contact_id": "sample-webhook-001",
     "first_name": "Jordan",
     "last_name": "Carter",
     "phone": "+14045550199",
     "source": "sms",
     "status": "warm",
     "custom_fields": {
-      "property_address": "25 Demo Ridge",
+      "property_address": "25 Sample Ridge",
       "city": "Lawrenceville",
       "county": "Gwinnett",
       "state": "GA",
@@ -106,14 +106,14 @@ curl -X POST http://localhost:8000/webhooks/ghl \
 | Service | Why not the alternative |
 |---|---|
 | ECS Fargate | GHL webhooks need warm, predictable responses. Lambda in a VPC can introduce cold-start latency, and future scoring jobs may exceed Lambda's runtime model. |
-| RDS PostgreSQL | Lead, property, and follow-up data is relational and benefits from joins. DynamoDB is not the right primary shape for this workflow, and Aurora is more capacity than the current demo workload needs. |
+| RDS PostgreSQL | Lead, property, and follow-up data is relational and benefits from joins. DynamoDB is not the right primary shape for this workflow, and Aurora is more capacity than the current workload needs. |
 | RDS Proxy | Fargate tasks create database connections; the proxy pools and protects the database from connection pressure. |
 | CloudFront | Market snapshot responses are cacheable and should not hit Fargate or the database on every read. |
 | Route53 | Provides real API and origin DNS routing for the CloudFront and ALB path. |
 | ALB | Routes `/api/*`, `/webhooks/*`, and `/health` to ECS targets and terminates TLS at the regional origin. |
 | Secrets Manager | RDS-managed database credentials and webhook HMAC secrets stay out of code and Terraform variable values. |
 | WAF | AWS managed rules and webhook rate limiting protect the CloudFront edge. |
-| Kubernetes/EKS manifests | Included as an optional platform track because Kubernetes is a high-demand skill. ECS remains the cost-controlled AWS demo path. |
+| Kubernetes/EKS manifests | Included as an optional platform track for portable container operations. ECS remains the cost-controlled AWS deployment path. |
 
 ## RDS vs. Aurora Decision Rationale
 
@@ -123,11 +123,11 @@ The performance requirement is practical rather than extreme. The API needs fast
 
 For production failover and high availability, RDS can be promoted to Multi-AZ when the project has real uptime requirements. That is a straightforward upgrade path without taking on Aurora-specific operational behavior too early. Aurora would make more sense later if lead volume grows materially, concurrent webhook traffic increases, read scaling becomes necessary, or the business needs stronger regional availability and faster failover characteristics.
 
-Autoscaling is another tradeoff. Aurora Serverless can scale capacity more dynamically, but this API does not currently have spiky enough database demand to justify that complexity. A small provisioned RDS instance is easier to reason about, easier to estimate for demos, and cheaper for the expected volume. The project can revisit Aurora when traffic, scaling, or availability requirements are no longer served well by provisioned RDS.
+Autoscaling is another tradeoff. Aurora Serverless can scale capacity more dynamically, but this API does not currently have spiky enough database demand to justify that complexity. A small provisioned RDS instance is easier to reason about, easier to estimate for short validation runs, and cheaper for the expected volume. The project can revisit Aurora when traffic, scaling, or availability requirements are no longer served well by provisioned RDS.
 
 ## Production Upgrade Path
 
-The demo defaults are intentionally cost-controlled. For a real production launch, keep the same service boundaries but harden the database and teardown settings:
+The default dev settings are intentionally cost-controlled. For a real production launch, keep the same service boundaries but harden the database and teardown settings:
 
 - use `terraform/environments/dev/production.tfvars.example` as the starting override file
 - set `rds_multi_az = true`
@@ -205,9 +205,9 @@ terraform -chdir=terraform/environments/dev apply tfplan
 
 Do not skip the plan review. Set `route53_zone_id` in `terraform/environments/dev/terraform.tfvars` before applying DNS/ACM resources.
 
-## Deployment Evidence To Capture
+## Deployment Validation Artifacts
 
-This repo intentionally has no committed AWS screenshots yet because the stack has not been applied in AWS. During the short demo window, capture evidence that proves the build ran end to end:
+When validating the stack in AWS, capture artifacts that show the build ran end to end:
 
 | Evidence | What to show |
 |---|---|
@@ -222,9 +222,9 @@ This repo intentionally has no committed AWS screenshots yet because the stack h
 
 ## Cost Profile
 
-The stack is designed for short demo windows and teardown. RDS is the current database target because it keeps demo costs predictable while preserving a realistic relational architecture. For cost control, scale ECS to zero before demos end or destroy the stack.
+The stack is designed for short validation windows and teardown. RDS is the current database target because it keeps costs predictable while preserving a realistic relational architecture. For cost control, scale ECS to zero before validation ends or destroy the stack.
 
-| Service | Approximate demo cost driver |
+| Service | Approximate cost driver |
 |---|---|
 | ECS Fargate | 2 small always-on tasks while deployed |
 | RDS PostgreSQL | Small provisioned database instance while deployed |
@@ -232,7 +232,7 @@ The stack is designed for short demo windows and teardown. RDS is the current da
 | ALB | Hourly load balancer cost |
 | CloudFront/WAF | Low traffic request and rule processing cost |
 
-Screenshot evidence should be stored under `docs/screenshots/` after the short AWS demo. Do not keep the stack running just to preserve screenshots.
+Validation screenshots should be stored under `docs/screenshots/` after AWS validation. Do not keep the stack running just to preserve images.
 
 ## CI/CD
 

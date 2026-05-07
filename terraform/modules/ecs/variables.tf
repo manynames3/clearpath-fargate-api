@@ -102,7 +102,7 @@ variable "desired_count" {
 }
 
 variable "alb_deletion_protection" {
-  description = "Whether deletion protection is enabled for the ALB. Keep false for teardown demos; enable for production."
+  description = "Whether deletion protection is enabled for the ALB. Keep false for ephemeral teardown; enable for production."
   type        = bool
   default     = false
 }

@@ -1,18 +1,18 @@
-# Demo Evidence Template
+# Deployment Evidence Template
 
-Use this file as the capture checklist for a short-lived AWS demo. Replace each placeholder with a screenshot path, command output, or short note after deployment. Store screenshots in `docs/screenshots/`. Destroy the stack after evidence is captured.
+Use this file as the capture checklist for a short-lived AWS validation run. Replace each placeholder with a screenshot path, command output, or short note after deployment. Store screenshots in `docs/screenshots/`. Destroy the stack after evidence is captured.
 
 ## Summary
 
-- Demo date:
+- Validation date:
 - Git commit:
 - AWS region:
 - Terraform workspace/backend:
 - Terraform plan summary:
 - Terraform apply summary:
 - Terraform destroy summary:
-- Total demo window:
-- Estimated demo cost:
+- Total validation window:
+- Estimated validation cost:
 
 ## Architecture Evidence
 
@@ -51,7 +51,7 @@ Expected:
 curl -X POST https://api.clearpathpropertygroup.com/webhooks/ghl \
   -H "Content-Type: application/json" \
   -H "X-Clearpath-Webhook-Secret: <redacted>" \
-  -d '{"id":"demo-ghl-001","firstName":"Demo","lastName":"Lead","status":"warm","customFields":[{"key":"county","field_value":"Gwinnett"},{"key":"property_address","field_value":"25 Demo Ridge"}]}'
+  -d '{"id":"validation-ghl-001","firstName":"Validation","lastName":"Lead","status":"warm","customFields":[{"key":"county","field_value":"Gwinnett"},{"key":"property_address","field_value":"25 Validation Ridge"}]}'
 ```
 
 Expected:

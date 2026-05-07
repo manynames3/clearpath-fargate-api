@@ -120,7 +120,7 @@ resource "aws_kms_alias" "ecs" {
 }
 
 resource "aws_ecr_repository" "api" {
-  #checkov:skip=CKV_AWS_51:The demo workflow publishes a moving latest tag; immutable SHA tags are also pushed by CI.
+  #checkov:skip=CKV_AWS_51:The deployment workflow publishes a moving latest tag; immutable SHA tags are also pushed by CI.
   name                 = var.ecr_repository_name
   image_tag_mutability = "MUTABLE"
   force_delete         = true
@@ -184,8 +184,8 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_lb" "main" {
-  #checkov:skip=CKV_AWS_91:ALB access logs are omitted for low-cost demo teardown; CloudFront and ECS logs cover the request path.
-  #checkov:skip=CKV_AWS_150:Deletion protection is controlled by var.alb_deletion_protection; demo defaults disable it for teardown, production should enable it.
+  #checkov:skip=CKV_AWS_91:ALB access logs are omitted for low-cost ephemeral teardown; CloudFront and ECS logs cover the request path.
+  #checkov:skip=CKV_AWS_150:Deletion protection is controlled by var.alb_deletion_protection; dev defaults disable it for teardown, production should enable it.
   #checkov:skip=CKV2_AWS_28:WAF is attached to CloudFront, and the ALB security group only accepts CloudFront origin-facing traffic.
   name                       = "${var.project}-alb-${var.env}"
   internal                   = false

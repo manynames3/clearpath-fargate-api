@@ -2,7 +2,7 @@
 
 Clearpath ingests GoHighLevel contact events through `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: GHL sends lead/contact data to this API, and the API upserts the lead plus property details into PostgreSQL. The app does not call the GHL API yet.
 
-## Recommended Portfolio Setup
+## Recommended Setup
 
 For this project stage, use a GoHighLevel Workflow Custom Webhook action. It is the simplest fit because Clearpath only needs outbound contact data from GHL into the API.
 
@@ -26,7 +26,7 @@ GHL custom workflow webhooks can send mapped values from contact fields, custom 
 
 ## Payload Contract
 
-The API accepts the local demo shape:
+The API accepts the local sample shape:
 
 ```json
 {
@@ -38,7 +38,7 @@ The API accepts the local demo shape:
   "source": "sms",
   "status": "warm",
   "custom_fields": {
-    "property_address": "25 Demo Ridge",
+    "property_address": "25 Sample Ridge",
     "city": "Lawrenceville",
     "county": "Gwinnett",
     "state": "GA",
@@ -59,7 +59,7 @@ It also accepts HighLevel-style field names commonly seen in webhook payloads:
   "source": "facebook",
   "status": "warm",
   "customFields": [
-    { "key": "property_address", "field_value": "25 Demo Ridge" },
+    { "key": "property_address", "field_value": "25 Sample Ridge" },
     { "key": "city", "field_value": "Lawrenceville" },
     { "key": "county", "field_value": "Gwinnett" },
     { "key": "state", "field_value": "GA" },
@@ -88,7 +88,7 @@ Field mapping:
 
 ## Signature Model
 
-The demo deployment uses a shared HMAC secret stored in Secrets Manager. Terraform creates the secret container at `clearpath/dev/ghl-webhook`, but the value is loaded out-of-band so it never lands in Terraform state.
+The ephemeral deployment uses a shared HMAC secret stored in Secrets Manager. Terraform creates the secret container at `clearpath/dev/ghl-webhook`, but the value is loaded out-of-band so it never lands in Terraform state.
 
 ```bash
 aws secretsmanager put-secret-value \
@@ -111,14 +111,14 @@ curl -X POST http://localhost:8000/webhooks/ghl \
   -H "Content-Type: application/json" \
   -H "X-Clearpath-Webhook-Secret: dev-secret-if-enabled" \
   -d '{
-    "id": "contact_demo_001",
+    "id": "contact_sample_001",
     "firstName": "Jordan",
     "lastName": "Carter",
     "phone": "+14045550199",
     "source": "sms",
     "status": "warm",
     "customFields": [
-      { "key": "property_address", "field_value": "25 Demo Ridge" },
+      { "key": "property_address", "field_value": "25 Sample Ridge" },
       { "key": "county", "field_value": "Gwinnett" },
       { "key": "state", "field_value": "GA" },
       { "key": "situation", "field_value": "inherited" }
