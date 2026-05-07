@@ -5,7 +5,7 @@
 
 Containerized REST API on ECS Fargate, RDS PostgreSQL, RDS Proxy, CloudFront, Route53, WAF, and Secrets Manager.
 
-This repository is built as a portfolio-grade AWS Terraform project for Clearpath Property Group's off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story.
+This repository is built as a portfolio-grade AWS Terraform project for Clearpath Property Group's off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story. ECS Fargate is the primary AWS deployment path, with an optional Kubernetes/EKS manifest track in `k8s/`.
 
 ## Deployment Status
 
@@ -31,6 +31,7 @@ Capture screenshots during one short AWS demo window, then tear the stack down:
 See [docs/portfolio-demo.md](docs/portfolio-demo.md) for the short-lived deployment checklist.
 Use [docs/demo-evidence-template.md](docs/demo-evidence-template.md) when capturing screenshots and command output.
 Review [docs/cost-estimate.md](docs/cost-estimate.md) before opening an AWS demo window.
+Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 
 ## Local Quick Start
 
@@ -111,6 +112,7 @@ curl -X POST http://localhost:8000/webhooks/ghl \
 | ALB | Routes `/api/*`, `/webhooks/*`, and `/health` to ECS targets and terminates TLS at the regional origin. |
 | Secrets Manager | RDS-managed database credentials and webhook HMAC secrets stay out of code and Terraform variable values. |
 | WAF | AWS managed rules and webhook rate limiting protect the CloudFront edge. |
+| Kubernetes/EKS manifests | Included as an optional platform track because Kubernetes is a high-demand skill. ECS remains the cost-controlled AWS demo path. |
 
 ## RDS vs. Aurora Decision Rationale
 

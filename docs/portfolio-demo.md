@@ -63,3 +63,14 @@ The demo defaults prioritize cost and clean teardown. For a real production depl
 - keep CloudFront caching on market snapshots
 
 Aurora PostgreSQL is the future upgrade path when workload patterns justify it: high concurrency, read replica needs, stricter failover goals, or more dynamic capacity scaling.
+
+## Kubernetes Evidence
+
+The repo includes a source-only Kubernetes track under `k8s/`. For a no-AWS Kubernetes screenshot, run the local overlay in kind or minikube and capture:
+
+- `kubectl get deploy,svc,hpa,pdb -n clearpath-api`
+- rollout status for `deployment/clearpath-api`
+- readiness/liveness probe configuration
+- `curl http://localhost:8000/health` through port-forward
+
+Do not create an EKS cluster unless you intentionally want a separate paid demo window.

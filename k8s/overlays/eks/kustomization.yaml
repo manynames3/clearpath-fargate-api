@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - ingress.yaml
+patches:
+  - target:
+      kind: ConfigMap
+      name: clearpath-api-config
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: clearpath-api-config
+        namespace: clearpath-api
+      data:
+        ENVIRONMENT: "eks"
+        AWS_REGION: "us-east-1"
+        DB_PROXY_ENDPOINT: "REPLACE_WITH_RDS_PROXY_ENDPOINT"
+        DB_SECRET_ARN: "REPLACE_WITH_DATABASE_SECRET_ARN"
+        GHL_WEBHOOK_SECRET: "REPLACE_WITH_GHL_WEBHOOK_SECRET_ARN"
+        SKIP_DB_INIT: "false"
+  - target:
+      kind: Deployment
+      name: clearpath-api
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: clearpath-api
+        namespace: clearpath-api
+      spec:
+        template:
+          spec:
+            automountServiceAccountToken: true
+images:
+  - name: clearpath-api
+    newName: REPLACE_WITH_ECR_REPOSITORY_URL
+    newTag: latest

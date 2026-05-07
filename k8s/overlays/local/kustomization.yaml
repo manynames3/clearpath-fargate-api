@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - target:
+      kind: ConfigMap
+      name: clearpath-api-config
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: clearpath-api-config
+        namespace: clearpath-api
+      data:
+        ENVIRONMENT: "local-k8s"
+        SKIP_DB_INIT: "true"
+  - target:
+      kind: Deployment
+      name: clearpath-api
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: clearpath-api
+        namespace: clearpath-api
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: api
+                imagePullPolicy: Never
+images:
+  - name: clearpath-api
+    newName: clearpath-api
+    newTag: local

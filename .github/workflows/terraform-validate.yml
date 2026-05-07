@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - "terraform/**"
+      - "k8s/**"
       - ".github/workflows/terraform-validate.yml"
   push:
     branches: [main]
     paths:
       - "terraform/**"
+      - "k8s/**"
       - ".github/workflows/terraform-validate.yml"
 
 permissions:
@@ -46,5 +48,8 @@ jobs:
       - name: Install Checkov
         run: pip install checkov
 
-      - name: Checkov
+      - name: Checkov Terraform
         run: checkov -d terraform/ --framework terraform --quiet
+
+      - name: Checkov Kubernetes
+        run: checkov -d k8s/ --framework kubernetes --quiet
