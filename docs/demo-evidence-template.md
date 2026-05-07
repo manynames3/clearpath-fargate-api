@@ -1,6 +1,6 @@
 # Demo Evidence Template
 
-Use this file as the capture checklist for a short-lived AWS demo. Replace each placeholder with a screenshot path, command output, or short note after deployment. Destroy the stack after evidence is captured.
+Use this file as the capture checklist for a short-lived AWS demo. Replace each placeholder with a screenshot path, command output, or short note after deployment. Store screenshots in `docs/screenshots/`. Destroy the stack after evidence is captured.
 
 ## Summary
 
@@ -15,16 +15,16 @@ Use this file as the capture checklist for a short-lived AWS demo. Replace each 
 
 | Area | Evidence | Notes |
 |---|---|---|
-| Terraform plan | `screenshots/terraform-plan.png` | Show resources to create before apply. |
-| ECS service | `screenshots/ecs-service.png` | Desired and running task counts match. |
-| ECS task definition | `screenshots/ecs-task-definition.png` | Environment variables use ARNs/endpoints, not plaintext secrets. |
-| ALB target health | `screenshots/alb-target-health.png` | Targets healthy on `/health`. |
-| RDS PostgreSQL | `screenshots/rds-instance.png` | Private database, encrypted storage, IAM auth enabled. |
-| RDS Proxy | `screenshots/rds-proxy-targets.png` | Proxy target registered and available. |
-| Security groups | `screenshots/security-groups.png` | CloudFront -> ALB -> ECS -> RDS Proxy -> RDS. |
-| CloudFront | `screenshots/cloudfront-distribution.png` | Distribution deployed with API aliases. |
-| WAF | `screenshots/waf-web-acl.png` | WebACL attached to CloudFront. |
-| CloudWatch | `screenshots/cloudwatch-dashboard.png` | ECS, ALB, CloudFront, and RDS widgets visible. |
+| Terraform plan | `docs/screenshots/terraform-plan.png` | Show resources to create before apply. |
+| ECS service | `docs/screenshots/ecs-service.png` | Desired and running task counts match. |
+| ECS task definition | `docs/screenshots/ecs-task-definition.png` | Environment variables use ARNs/endpoints, not plaintext secrets. |
+| ALB target health | `docs/screenshots/alb-target-health.png` | Targets healthy on `/health`. |
+| RDS PostgreSQL | `docs/screenshots/rds-instance.png` | Private database, encrypted storage, IAM auth enabled. |
+| RDS Proxy | `docs/screenshots/rds-proxy-targets.png` | Proxy target registered and available. |
+| Security groups | `docs/screenshots/security-groups.png` | CloudFront -> ALB -> ECS -> RDS Proxy -> RDS. |
+| CloudFront | `docs/screenshots/cloudfront-distribution.png` | Distribution deployed with API aliases. |
+| WAF | `docs/screenshots/waf-web-acl.png` | WebACL attached to CloudFront. |
+| CloudWatch | `docs/screenshots/cloudwatch-dashboard.png` | ECS, ALB, CloudFront, and RDS widgets visible. |
 
 ## API Evidence
 

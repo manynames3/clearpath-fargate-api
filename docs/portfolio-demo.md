@@ -13,6 +13,7 @@ That answer shows practical AWS judgment: use the right managed service for the 
 ## Short-Lived AWS Demo
 
 Run this only when ready to spend a small amount for screenshots and validation. Always review the plan before apply.
+Read [cost-estimate.md](cost-estimate.md) before starting the demo window.
 
 ```bash
 cd terraform/environments/dev
@@ -35,7 +36,7 @@ After apply, capture:
 - API health response through the custom domain
 - `/api/market/gwinnett` response with cache headers
 
-Use [demo-evidence-template.md](demo-evidence-template.md) as the screenshot and command-output checklist.
+Use [demo-evidence-template.md](demo-evidence-template.md) as the screenshot and command-output checklist. Store screenshots in `docs/screenshots/`.
 
 Then destroy the stack the same day.
 

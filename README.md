@@ -30,6 +30,7 @@ Capture screenshots during one short AWS demo window, then tear the stack down:
 
 See [docs/portfolio-demo.md](docs/portfolio-demo.md) for the short-lived deployment checklist.
 Use [docs/demo-evidence-template.md](docs/demo-evidence-template.md) when capturing screenshots and command output.
+Review [docs/cost-estimate.md](docs/cost-estimate.md) before opening an AWS demo window.
 
 ## Local Quick Start
 
@@ -191,6 +192,8 @@ The stack is designed for short demo windows and teardown. RDS is the current da
 | RDS Proxy | Hourly proxy capacity |
 | ALB | Hourly load balancer cost |
 | CloudFront/WAF | Low traffic request and rule processing cost |
+
+Screenshot evidence should be stored under `docs/screenshots/` after the short AWS demo. Do not keep the stack running just to preserve screenshots.
 
 ## CI/CD
 
