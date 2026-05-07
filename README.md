@@ -1,5 +1,8 @@
 # Clearpath Lead Intelligence API
 
+[![Build and Deploy](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/build-push.yml/badge.svg)](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/build-push.yml)
+[![Terraform Validate](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/terraform-validate.yml/badge.svg)](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/terraform-validate.yml)
+
 Containerized REST API on ECS Fargate, Aurora PostgreSQL Serverless v2, RDS Proxy, CloudFront, Route53, WAF, and Secrets Manager.
 
 This repository is built as a portfolio-grade AWS Terraform project for Clearpath Property Group's off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story.
@@ -7,6 +10,73 @@ This repository is built as a portfolio-grade AWS Terraform project for Clearpat
 ## Deployment Status
 
 This repo is currently built and validated locally only. Do not run `terraform apply` until you intentionally want to create billable AWS resources.
+
+## Local Quick Start
+
+The fastest portfolio demo is local Docker Compose: FastAPI plus Postgres, no AWS resources.
+
+```bash
+cp .env.example .env
+make dev-detached
+make seed
+make smoke
+```
+
+Open:
+
+- `http://localhost:8000/health`
+- `http://localhost:8000/api/leads?county=Gwinnett&limit=5`
+- `http://localhost:8000/api/market/gwinnett`
+
+Stop and remove local containers:
+
+```bash
+make clean
+```
+
+If Docker is not installed, use the SQLite fallback:
+
+```bash
+make install
+make seed-local
+make dev-local
+```
+
+Then run the same `localhost:8000` API calls.
+
+## Sample API Calls
+
+```bash
+curl -f http://localhost:8000/health
+```
+
+```bash
+curl -f "http://localhost:8000/api/leads?county=Gwinnett&limit=5"
+```
+
+```bash
+curl -f "http://localhost:8000/api/market/gwinnett"
+```
+
+```bash
+curl -X POST http://localhost:8000/webhooks/ghl \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contact_id": "demo-webhook-001",
+    "first_name": "Jordan",
+    "last_name": "Carter",
+    "phone": "+14045550199",
+    "source": "sms",
+    "status": "warm",
+    "custom_fields": {
+      "property_address": "25 Demo Ridge",
+      "city": "Lawrenceville",
+      "county": "Gwinnett",
+      "state": "GA",
+      "situation": "inherited"
+    }
+  }'
+```
 
 ## Why This Architecture
 

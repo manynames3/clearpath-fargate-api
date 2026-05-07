@@ -12,6 +12,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+clearpath-local.db
 
 .env
 .DS_Store

@@ -81,7 +81,13 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    if get_settings().skip_db_init:
+    settings = get_settings()
+    if settings.skip_db_init:
+        return
+
+    if settings.local_create_tables:
+        async with get_engine().begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
         return
 
     async with get_engine().connect() as conn:
