@@ -35,6 +35,8 @@ After apply, capture:
 - API health response through the custom domain
 - `/api/market/gwinnett` response with cache headers
 
+Use [demo-evidence-template.md](demo-evidence-template.md) as the screenshot and command-output checklist.
+
 Then destroy the stack the same day.
 
 ```bash
@@ -48,6 +50,7 @@ If using manual commands instead of the teardown script, follow [teardown.md](te
 
 The demo defaults prioritize cost and clean teardown. For a real production deployment:
 
+- use `terraform/environments/dev/production.tfvars.example` as the starting override file
 - enable RDS Multi-AZ
 - increase the RDS instance class after load testing
 - set `rds_deletion_protection = true`

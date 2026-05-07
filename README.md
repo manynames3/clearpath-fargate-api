@@ -29,6 +29,7 @@ Capture screenshots during one short AWS demo window, then tear the stack down:
 - Terraform plan/apply/destroy output
 
 See [docs/portfolio-demo.md](docs/portfolio-demo.md) for the short-lived deployment checklist.
+Use [docs/demo-evidence-template.md](docs/demo-evidence-template.md) when capturing screenshots and command output.
 
 ## Local Quick Start
 
@@ -124,6 +125,7 @@ Autoscaling is another tradeoff. Aurora Serverless can scale capacity more dynam
 
 The demo defaults are intentionally cost-controlled. For a real production launch, keep the same service boundaries but harden the database and teardown settings:
 
+- use `terraform/environments/dev/production.tfvars.example` as the starting override file
 - set `rds_multi_az = true`
 - choose a larger RDS class after load testing, such as `db.t4g.small` or `db.t4g.medium`
 - set `rds_deletion_protection = true`

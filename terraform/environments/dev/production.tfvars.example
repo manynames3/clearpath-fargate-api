@@ -1,0 +1,16 @@
+# Example override file for a production-style posture.
+# Do not use this for the short portfolio demo unless you intentionally want
+# higher availability and harder-to-destroy resources.
+#
+# Usage:
+# terraform plan -var-file=terraform.tfvars -var-file=production.tfvars.example -out=tfplan
+
+rds_instance_class              = "db.t4g.small"
+rds_multi_az                    = true
+rds_deletion_protection         = true
+rds_skip_final_snapshot         = false
+rds_final_snapshot_identifier   = "clearpath-api-dev-final"
+alb_deletion_protection         = true
+
+# Keep this at the expected production baseline, then tune after load testing.
+ecs_desired_count = 2
