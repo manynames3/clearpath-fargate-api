@@ -24,12 +24,14 @@ terraform apply tfplan
 After apply, capture:
 
 - Terraform apply summary
+- VPC with `10.0.0.0/16`, six subnets across two AZs, and VPC Flow Logs
+- Route tables showing public IGW routing, private app NAT routing, and isolated database routing
+- Security groups showing CloudFront to ALB to ECS to RDS Proxy to RDS
 - ECS cluster and service with healthy task count
 - ECS task definition showing environment variables sourced from ARNs, not plaintext secrets
 - ALB target group health checks passing
 - RDS PostgreSQL instance private/public accessibility settings
 - RDS Proxy target health
-- Security groups showing CloudFront to ALB to ECS to RDS Proxy to RDS
 - CloudFront distribution deployed
 - WAF WebACL attached to CloudFront
 - CloudWatch dashboard and alarms

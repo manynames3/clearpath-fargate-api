@@ -6,22 +6,31 @@ Use this file as the capture checklist for a short-lived AWS demo. Replace each 
 
 - Demo date:
 - Git commit:
+- AWS region:
+- Terraform workspace/backend:
 - Terraform plan summary:
 - Terraform apply summary:
 - Terraform destroy summary:
 - Total demo window:
+- Estimated demo cost:
 
 ## Architecture Evidence
 
 | Area | Evidence | Notes |
 |---|---|---|
 | Terraform plan | `docs/screenshots/terraform-plan.png` | Show resources to create before apply. |
+| Terraform apply | `docs/screenshots/terraform-apply.png` | Show successful apply and key outputs. |
+| VPC | `docs/screenshots/vpc.png` | VPC `10.0.0.0/16`, tags, and Flow Logs. |
+| Subnets | `docs/screenshots/subnets.png` | Six subnets across `us-east-1a` and `us-east-1b`. |
+| Route tables | `docs/screenshots/route-tables.png` | Public IGW route, private app NAT route, isolated database route table. |
+| VPC endpoints | `docs/screenshots/vpc-endpoints.png` | ECR, CloudWatch Logs, Secrets Manager, and S3 endpoints for private tasks. |
+| Security groups | `docs/screenshots/security-groups.png` | CloudFront -> ALB -> ECS -> RDS Proxy -> RDS. |
 | ECS service | `docs/screenshots/ecs-service.png` | Desired and running task counts match. |
 | ECS task definition | `docs/screenshots/ecs-task-definition.png` | Environment variables use ARNs/endpoints, not plaintext secrets. |
+| ECS logs | `docs/screenshots/cloudwatch-logs.png` | Container startup and health-check logs visible. |
 | ALB target health | `docs/screenshots/alb-target-health.png` | Targets healthy on `/health`. |
 | RDS PostgreSQL | `docs/screenshots/rds-instance.png` | Private database, encrypted storage, IAM auth enabled. |
 | RDS Proxy | `docs/screenshots/rds-proxy-targets.png` | Proxy target registered and available. |
-| Security groups | `docs/screenshots/security-groups.png` | CloudFront -> ALB -> ECS -> RDS Proxy -> RDS. |
 | CloudFront | `docs/screenshots/cloudfront-distribution.png` | Distribution deployed with API aliases. |
 | WAF | `docs/screenshots/waf-web-acl.png` | WebACL attached to CloudFront. |
 | CloudWatch | `docs/screenshots/cloudwatch-dashboard.png` | ECS, ALB, CloudFront, and RDS widgets visible. |
@@ -39,6 +48,25 @@ Expected:
 ```
 
 ```bash
+curl -X POST https://api.clearpathpropertygroup.com/webhooks/ghl \
+  -H "Content-Type: application/json" \
+  -H "X-Clearpath-Webhook-Secret: <redacted>" \
+  -d '{"id":"demo-ghl-001","firstName":"Demo","lastName":"Lead","status":"warm","customFields":[{"key":"county","field_value":"Gwinnett"},{"key":"property_address","field_value":"25 Demo Ridge"}]}'
+```
+
+Expected:
+
+```json
+{"status":"accepted","lead_id":"<uuid>"}
+```
+
+```bash
+curl -f "https://api.clearpathpropertygroup.com/api/leads?county=Gwinnett&status=warm"
+```
+
+Expected: the webhook lead appears with property data.
+
+```bash
 curl -i https://api.clearpathpropertygroup.com/api/market/gwinnett
 ```
 
@@ -49,6 +77,39 @@ cache-control: public, max-age=3600
 ```
 
 Second request should show a CloudFront cache hit when the distribution has warmed.
+
+## AWS CLI Evidence
+
+Run these from the same commit and capture command output as text or screenshots.
+
+```bash
+aws ec2 describe-vpcs --filters Name=tag:Project,Values=clearpath-api
+aws ec2 describe-subnets --filters Name=tag:Project,Values=clearpath-api
+aws ec2 describe-security-groups --filters Name=tag:Project,Values=clearpath-api
+```
+
+```bash
+aws ecs describe-services \
+  --cluster clearpath-dev \
+  --services clearpath-api \
+  --query 'services[0].{Running:runningCount,Desired:desiredCount,Status:status}'
+```
+
+```bash
+aws rds describe-db-instances \
+  --query 'DBInstances[?DBName==`clearpath`].{ID:DBInstanceIdentifier,Public:PubliclyAccessible,Encrypted:StorageEncrypted,Status:DBInstanceStatus}'
+```
+
+```bash
+aws rds describe-db-proxies \
+  --db-proxy-name clearpath-proxy-dev \
+  --query 'DBProxies[0].{Name:DBProxyName,Status:Status,RequireTLS:RequireTLS}'
+```
+
+```bash
+aws cloudfront list-distributions \
+  --query 'DistributionList.Items[?Comment==`clearpath-api`].{Domain:DomainName,Status:Status}'
+```
 
 ## Interview Notes
 
@@ -69,5 +130,7 @@ Capture:
 - ECS service scaled to zero before destroy
 - Terraform destroy plan reviewed
 - Terraform destroy completed
+- ECR images intentionally retained or removed
 - RDS instances no longer listed
 - CloudFront distribution no longer listed or disabled/deleting
+- NAT gateway and ALB no longer listed

@@ -157,6 +157,27 @@ flowchart LR
     ecs --> logs["CloudWatch Logs"]
 ```
 
+## Network Architecture
+
+The Terraform networking module builds a three-tier VPC in `us-east-1` across two Availability Zones. Public subnets only host internet-facing entry infrastructure. ECS tasks and RDS Proxy stay in private app subnets, and PostgreSQL stays in private database subnets with no default route to the internet.
+
+| Tier | us-east-1a | us-east-1b | Resources | Routing |
+|---|---|---|---|---|
+| VPC | `10.0.0.0/16` | `10.0.0.0/16` | Shared network boundary | Tagged and flow-logged |
+| Public | `10.0.1.0/24` | `10.0.2.0/24` | ALB, NAT gateway | `0.0.0.0/0` to Internet Gateway |
+| Private app | `10.0.10.0/24` | `10.0.11.0/24` | ECS Fargate tasks, RDS Proxy, VPC endpoints | NAT for controlled egress; S3 and interface endpoints for AWS services |
+| Private data | `10.0.20.0/24` | `10.0.21.0/24` | RDS PostgreSQL | Isolated route table, no internet default route |
+
+Security group flow is intentionally narrow:
+
+| From | To | Port | Control |
+|---|---|---|---|
+| CloudFront origin-facing prefix list | ALB | `443` | ALB does not accept arbitrary internet sources |
+| ALB security group | ECS security group | `8000` | App traffic only from the load balancer |
+| ECS security group | RDS Proxy security group | `5432` | Application connects through the proxy only |
+| RDS Proxy security group | RDS security group | `5432` | Database accepts PostgreSQL only from RDS Proxy |
+| ECS security group | VPC endpoint security group | `443` | Private access to AWS APIs used at runtime |
+
 ## Endpoints
 
 - `POST /webhooks/ghl` - GoHighLevel contact webhook ingestion
@@ -183,6 +204,21 @@ terraform -chdir=terraform/environments/dev apply tfplan
 ```
 
 Do not skip the plan review. Set `route53_zone_id` in `terraform/environments/dev/terraform.tfvars` before applying DNS/ACM resources.
+
+## Deployment Evidence To Capture
+
+This repo intentionally has no committed AWS screenshots yet because the stack has not been applied in AWS. During the short demo window, capture evidence that proves the build ran end to end:
+
+| Evidence | What to show |
+|---|---|
+| Terraform plan/apply | Reviewed plan, successful apply, and outputs for ALB, CloudFront, RDS Proxy, and domains |
+| Network | VPC, six subnets across two AZs, route tables, NAT gateway, VPC endpoints, and VPC Flow Logs |
+| Security groups | CloudFront to ALB, ALB to ECS, ECS to RDS Proxy, RDS Proxy to RDS |
+| ECS/Fargate | Cluster, service, two running tasks, task definition, and CloudWatch logs |
+| Database | RDS PostgreSQL private accessibility, encryption, Secrets Manager integration, and RDS Proxy healthy target |
+| Edge | CloudFront distribution deployed, WAF attached, custom domain behavior, and `/api/market/*` cache hit |
+| API | `/health`, `/webhooks/ghl`, `/api/leads`, and `/api/market/gwinnett` responses through the deployed domain |
+| Teardown | ECS scaled down, Terraform destroy completed, and billable resources removed |
 
 ## Cost Profile
 

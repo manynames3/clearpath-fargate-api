@@ -40,6 +40,38 @@ The ALB security group accepts HTTPS only from the AWS-managed CloudFront origin
 
 Runtime credentials are fetched from Secrets Manager. Terraform creates the GHL webhook secret container without writing a secret value into state; load the value out-of-band before starting the service.
 
+## Network Architecture
+
+The deployed network is a three-tier VPC in `us-east-1` with two Availability Zones. The public tier handles ingress and controlled egress. The private app tier runs the container workload and RDS Proxy. The private data tier contains PostgreSQL and has no internet default route.
+
+| Tier | us-east-1a | us-east-1b | Resources | Routing |
+|---|---|---|---|---|
+| VPC | `10.0.0.0/16` | `10.0.0.0/16` | Shared network boundary | VPC Flow Logs enabled |
+| Public | `10.0.1.0/24` | `10.0.2.0/24` | ALB, NAT gateway | Internet Gateway route |
+| Private app | `10.0.10.0/24` | `10.0.11.0/24` | ECS Fargate, RDS Proxy, VPC endpoints | NAT plus private AWS service endpoints |
+| Private data | `10.0.20.0/24` | `10.0.21.0/24` | RDS PostgreSQL | Isolated database route table |
+
+```mermaid
+flowchart TB
+    internet["Internet clients and GHL"] --> cloudfront["CloudFront + WAF"]
+    cloudfront --> alb["Public subnets: ALB"]
+    alb --> ecs["Private app subnets: ECS Fargate"]
+    ecs --> proxy["Private app subnets: RDS Proxy"]
+    proxy --> rds["Private data subnets: RDS PostgreSQL"]
+    ecs --> endpoints["VPC endpoints: ECR, CloudWatch, Secrets Manager, S3"]
+    ecs --> nat["NAT gateway for controlled egress"]
+```
+
+Security group rules mirror the same path:
+
+| Rule | Source | Destination | Port |
+|---|---|---|---|
+| ALB ingress | CloudFront origin-facing managed prefix list | ALB SG | `443` |
+| App ingress | ALB SG | ECS SG | `8000` |
+| Proxy ingress | ECS SG | RDS Proxy SG | `5432` |
+| Database ingress | RDS Proxy SG | RDS SG | `5432` |
+| Runtime AWS APIs | ECS SG | VPC endpoint SG | `443` |
+
 ## RDS vs. Aurora Decision Rationale
 
 The current database choice is standard RDS PostgreSQL, not Aurora. Clearpath's present workload is modest: a few webhook writes, lead/property/follow-up joins, and market snapshot reads that are cached by CloudFront. RDS is the more cost-effective fit for this stage because it can run on a small provisioned instance with predictable pricing while still providing managed PostgreSQL, backups, encryption, Secrets Manager integration, and a clean path to production hardening.
