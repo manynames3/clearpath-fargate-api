@@ -88,7 +88,7 @@ Field mapping:
 
 ## Signature Model
 
-The portfolio deployment uses a shared HMAC secret stored in Secrets Manager. Terraform creates the secret container at `clearpath/dev/ghl-webhook`, but the value is loaded out-of-band so it never lands in Terraform state.
+The demo deployment uses a shared HMAC secret stored in Secrets Manager. Terraform creates the secret container at `clearpath/dev/ghl-webhook`, but the value is loaded out-of-band so it never lands in Terraform state.
 
 ```bash
 aws secretsmanager put-secret-value \
@@ -141,4 +141,4 @@ If Clearpath needs two-way CRM sync later, add a separate GHL API client with:
 - retries and dead-letter handling for failed CRM writes
 - explicit rate-limit handling
 
-That is intentionally out of scope for this portfolio build because the current business requirement is inbound lead capture, not full CRM synchronization.
+That is intentionally out of scope for the current build because the current business requirement is inbound lead capture, not full CRM synchronization.

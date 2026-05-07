@@ -184,7 +184,7 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_lb" "main" {
-  #checkov:skip=CKV_AWS_91:ALB access logs are omitted for low-cost demo teardown; CloudFront and ECS logs cover the portfolio path.
+  #checkov:skip=CKV_AWS_91:ALB access logs are omitted for low-cost demo teardown; CloudFront and ECS logs cover the request path.
   #checkov:skip=CKV_AWS_150:Deletion protection is controlled by var.alb_deletion_protection; demo defaults disable it for teardown, production should enable it.
   #checkov:skip=CKV2_AWS_28:WAF is attached to CloudFront, and the ALB security group only accepts CloudFront origin-facing traffic.
   name                       = "${var.project}-alb-${var.env}"

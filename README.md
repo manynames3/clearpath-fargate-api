@@ -5,17 +5,17 @@
 
 Containerized REST API on ECS Fargate, RDS PostgreSQL, RDS Proxy, CloudFront, Route53, WAF, and Secrets Manager.
 
-This repository is built as a portfolio-grade AWS Terraform project for Clearpath Property Group's off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story. ECS Fargate is the primary AWS deployment path, with an optional Kubernetes/EKS manifest track in `k8s/`.
+This repository is built as a production-pattern AWS Terraform project for Clearpath Property Group's off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story. ECS Fargate is the primary AWS deployment path, with an optional Kubernetes/EKS manifest track in `k8s/`.
 
 ## Deployment Status
 
 This repo is currently built and validated locally only. Do not run `terraform apply` until you intentionally want to create billable AWS resources.
 
-## Portfolio Demo Strategy
+## Short-Lived Demo Strategy
 
-This project is designed to be deployed briefly, documented, and destroyed. The portfolio value is the architecture and Terraform implementation, not leaving ECS, ALB, RDS, RDS Proxy, NAT, CloudFront, and WAF running at idle.
+This project is designed to be deployed briefly, documented, and destroyed. The architectural value is the Terraform implementation and service design, not leaving ECS, ALB, RDS, RDS Proxy, NAT, CloudFront, and WAF running at idle.
 
-For interviews, the strongest story is the cost-aware production tradeoff: RDS PostgreSQL is implemented because the current workload is modest and predictable, while Aurora is documented as the upgrade path for higher scale or availability requirements. That shows judgment instead of simply choosing the most expensive managed database.
+The main database tradeoff is cost-aware and workload-driven: RDS PostgreSQL is implemented because the current workload is modest and predictable, while Aurora is documented as the upgrade path for higher scale or availability requirements.
 
 Capture screenshots during one short AWS demo window, then tear the stack down:
 
@@ -36,7 +36,7 @@ Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel webho
 
 ## Local Quick Start
 
-The fastest portfolio demo is local Docker Compose: FastAPI plus Postgres, no AWS resources.
+The fastest local demo is Docker Compose: FastAPI plus Postgres, no AWS resources.
 
 ```bash
 cp .env.example .env
@@ -238,4 +238,4 @@ Screenshot evidence should be stored under `docs/screenshots/` after the short A
 
 GitHub Actions validates app tests and Terraform. Deployment is manual-gated with `workflow_dispatch` so a normal push cannot accidentally push an image or roll ECS.
 
-GitLab CI mirrors Terraform validation for portfolio coverage.
+GitLab CI mirrors Terraform validation for CI coverage.

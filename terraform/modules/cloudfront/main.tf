@@ -197,7 +197,7 @@ resource "aws_cloudfront_response_headers_policy" "security" {
 resource "aws_cloudfront_distribution" "api" {
   #checkov:skip=CKV_AWS_86:CloudFront access logging is omitted for low-cost demo teardown; WAF metrics and ECS logs remain enabled.
   #checkov:skip=CKV_AWS_305:This is an API distribution, not a website; unknown root paths should flow to the API 404 handler.
-  #checkov:skip=CKV_AWS_374:Origin failover is intentionally omitted because this portfolio demo runs one regional ALB origin.
+  #checkov:skip=CKV_AWS_374:Origin failover is intentionally omitted because this demo runs one regional ALB origin.
   #checkov:skip=CKV_AWS_310:Origin group failover is intentionally omitted for the single-region demo architecture.
   enabled         = true
   is_ipv6_enabled = true

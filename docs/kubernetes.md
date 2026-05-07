@@ -67,15 +67,13 @@ For production EKS, use IAM Roles for Service Accounts or EKS Pod Identity rathe
 
 ## Why Keep ECS Too?
 
-Keeping both tracks is stronger for this portfolio:
+Keeping both tracks documents two practical container deployment options:
 
 - ECS Fargate shows AWS-native production container deployment.
 - Kubernetes manifests show orchestrator literacy: probes, HPA, PDB, NetworkPolicy, Service, Ingress, overlays.
 - The repo avoids paying for EKS until screenshots are needed.
-- The interview story stays practical: use ECS for the cost-controlled AWS demo, use EKS/Kubernetes when a team needs Kubernetes-standard operations.
+- ECS remains the cost-controlled AWS demo path, while EKS/Kubernetes is the option when a team needs Kubernetes-standard operations.
 
-## Interview Framing
+## Platform Decision
 
-Use this framing:
-
-> The main deployment path is ECS Fargate because it is cost-effective and AWS-native for this API. I added a Kubernetes/EKS track to demonstrate portable container operations: Deployment health probes, autoscaling, disruption budgets, network policy, and ingress. I would use EKS if the organization standardizes on Kubernetes or needs platform-level consistency across services, but I would not add EKS cost and complexity just for a small standalone API.
+The main deployment path is ECS Fargate because it is cost-effective and AWS-native for this API. The Kubernetes/EKS track demonstrates portable container operations through Deployment health probes, autoscaling, disruption budgets, network policy, and ingress. EKS becomes the better fit if the organization standardizes on Kubernetes or needs platform-level consistency across services; it is not required for a small standalone API by default.

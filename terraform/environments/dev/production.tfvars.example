@@ -1,5 +1,5 @@
 # Example override file for a production-style posture.
-# Do not use this for the short portfolio demo unless you intentionally want
+# Do not use this for the short demo unless you intentionally want
 # higher availability and harder-to-destroy resources.
 #
 # Usage:

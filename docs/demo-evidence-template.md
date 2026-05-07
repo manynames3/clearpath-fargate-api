@@ -111,7 +111,7 @@ aws cloudfront list-distributions \
   --query 'DistributionList.Items[?Comment==`clearpath-api`].{Domain:DomainName,Status:Status}'
 ```
 
-## Interview Notes
+## Design Notes
 
 - RDS was selected for the implemented build because current volume is modest and predictable.
 - RDS Proxy remains valuable because ECS/Fargate tasks can create many short-lived database connections.

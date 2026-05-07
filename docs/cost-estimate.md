@@ -1,6 +1,6 @@
 # Cost Estimate
 
-This stack is intended for a short portfolio demo, not continuous idle hosting. Deploy it, capture evidence, and destroy it the same day.
+This stack is intended for a short demo, not continuous idle hosting. Deploy it, capture evidence, and destroy it the same day.
 
 Pricing changes by region, date, architecture, traffic, and free-tier eligibility. Treat this as a planning guide and verify with the AWS Pricing Calculator before any real deployment. This estimate assumes `us-east-1`, low traffic, demo defaults, and a short 2-3 hour evidence window.
 
@@ -20,7 +20,7 @@ Pricing changes by region, date, architecture, traffic, and free-tier eligibilit
 
 ## Rough Demo Budget
 
-For a 2-3 hour portfolio run with light traffic, budget for **low single-digit dollars** rather than cents. The exact number depends on current regional pricing, how long CloudFront takes to disable/delete, data transfer, endpoint count, logs, and whether the stack is left running overnight.
+For a 2-3 hour demo run with light traffic, budget for **low single-digit dollars** rather than cents. The exact number depends on current regional pricing, how long CloudFront takes to disable/delete, data transfer, endpoint count, logs, and whether the stack is left running overnight.
 
 The biggest practical risk is forgetting hourly resources:
 

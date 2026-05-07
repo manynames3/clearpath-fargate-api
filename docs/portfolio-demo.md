@@ -1,14 +1,6 @@
 # Portfolio Demo
 
-This project should be deployed only long enough to capture evidence, then destroyed. The cost-aware design choice is part of the portfolio story: RDS PostgreSQL is implemented for the current workload because it is cheaper and simpler than Aurora, while Aurora remains a documented upgrade path.
-
-## Interview Positioning
-
-Use this framing:
-
-> I considered Aurora Serverless v2, but chose RDS PostgreSQL for the implemented build because the expected workload is modest: webhook writes, lead lookups, and cached market reads. RDS gives the project managed PostgreSQL, backups, encryption, IAM auth, Secrets Manager integration, and a clear Multi-AZ production path at lower cost. Aurora is documented as the next step if traffic, read scaling, or failover requirements increase.
-
-That answer shows practical AWS judgment: use the right managed service for the workload, not the most expensive one by default.
+This project should be deployed only long enough to capture evidence, then destroyed. RDS PostgreSQL is implemented for the current workload because it is cheaper and simpler than Aurora, while Aurora remains a documented upgrade path.
 
 ## Short-Lived AWS Demo
 
