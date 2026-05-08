@@ -19,6 +19,8 @@ terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
+After apply, configure the manual GitHub Actions image deployment path from [github-deploy-setup.md](github-deploy-setup.md), then run the `Build and Deploy` workflow with `deploy=true`. This builds the image in GitHub Actions, pushes it to ECR, and forces a new ECS deployment. Local Docker is not required for the preferred validation path.
+
 After apply, capture:
 
 - Terraform apply summary

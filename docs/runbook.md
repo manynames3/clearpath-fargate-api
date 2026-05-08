@@ -37,7 +37,7 @@ https://api.clearpathpropertygroup.com/webhooks/ghl
 
 Use [ghl-integration.md](ghl-integration.md) for the expected payload fields and shared secret header.
 
-Run the schema migration through RDS Proxy:
+Run the schema migration from an environment that can reach the private RDS Proxy endpoint:
 
 ```bash
 export AWS_REGION=us-east-1
@@ -45,13 +45,9 @@ export PROXY_ENDPOINT="$(terraform -chdir=terraform/environments/dev output -raw
 scripts/migrate.sh
 ```
 
-Build and push the image only when ready to deploy:
+Build and push the image through the manual GitHub Actions workflow described in [github-deploy-setup.md](github-deploy-setup.md). This is the preferred path because local Docker is not required. Use it only after the infrastructure is already applied and the GHL secret value is loaded.
 
-```bash
-docker build -t clearpath-api app/
-```
-
-The GitHub deploy workflow is manual-gated. Use it only after the infrastructure is already applied and the GHL secret value is loaded.
+The deploy workflow is manual-gated. It only pushes an image and forces a new ECS deployment when run with `deploy=true`.
 
 ## Health Checks
 

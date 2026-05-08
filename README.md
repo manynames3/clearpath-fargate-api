@@ -33,6 +33,7 @@ Use [docs/deployment-evidence-template.md](docs/deployment-evidence-template.md)
 Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel webhook setup and payload mapping.
+Use [docs/github-deploy-setup.md](docs/github-deploy-setup.md) for the manual GitHub Actions image deployment path.
 See [docs/decisions](docs/decisions/README.md) for architecture decision records.
 
 Before opening an AWS validation window, run:
@@ -257,6 +258,6 @@ Validation screenshots should be stored under `docs/screenshots/` after AWS vali
 
 ## CI/CD
 
-GitHub Actions validates app tests and Terraform. Deployment is manual-gated with `workflow_dispatch` so a normal push cannot accidentally push an image or roll ECS.
+GitHub Actions validates app tests and Terraform. Image deployment is manual-gated with `workflow_dispatch` and `deploy=true`, so a normal push cannot accidentally push an image or roll ECS. The preferred image path is GitHub Actions after Terraform has created ECR and ECS; local Docker is optional.
 
 GitLab CI mirrors Terraform validation for CI coverage.
