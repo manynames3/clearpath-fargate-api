@@ -33,6 +33,14 @@ flowchart LR
 
 ## Local Kubernetes Validation
 
+Render the local and EKS overlays without connecting to a cluster:
+
+```bash
+make validate-k8s
+```
+
+This target uses `kubectl kustomize` or `kustomize build` when either tool is installed. If neither tool is available, it prints a warning and skips render validation.
+
 The local overlay is intended for a quick Kubernetes smoke test. It skips database initialization so `/health` can prove the container, probes, Service, and Deployment work without running AWS resources.
 
 Example flow after installing Docker and either kind or minikube:
