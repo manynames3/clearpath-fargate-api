@@ -13,6 +13,8 @@ __pycache__/
 dist/
 build/
 clearpath-local.db
+docs/evidence/*
+!docs/evidence/.gitkeep
 
 .env
 .DS_Store

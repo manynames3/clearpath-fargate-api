@@ -82,6 +82,12 @@ Second request should show a CloudFront cache hit when the distribution has warm
 
 Run these from the same commit and capture command output as text or screenshots.
 
+The same read-only checks can be collected automatically:
+
+```bash
+make deployment-evidence
+```
+
 ```bash
 aws ec2 describe-vpcs --filters Name=tag:Project,Values=clearpath-api
 aws ec2 describe-subnets --filters Name=tag:Project,Values=clearpath-api

@@ -33,6 +33,12 @@ After apply, capture:
 
 Use [deployment-evidence-template.md](deployment-evidence-template.md) as the screenshot and command-output checklist. Store screenshots in `docs/screenshots/`.
 
+Collect read-only AWS CLI output into `docs/evidence/<timestamp>/`:
+
+```bash
+make deployment-evidence
+```
+
 Then destroy the stack the same day.
 
 ```bash

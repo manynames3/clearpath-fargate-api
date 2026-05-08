@@ -21,6 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "aiosqlite",
+  "checkov",
   "factory-boy",
   "httpx",
   "pytest",

@@ -188,6 +188,12 @@ Security group flow is intentionally narrow:
 ## Local Validation
 
 ```bash
+make validate
+```
+
+Equivalent individual commands:
+
+```bash
 .venv/bin/pytest app/tests
 terraform -chdir=terraform/environments/dev init -backend=false
 terraform -chdir=terraform/environments/dev validate
@@ -219,6 +225,12 @@ When validating the stack in AWS, capture artifacts that show the build ran end 
 | Edge | CloudFront distribution deployed, WAF attached, custom domain behavior, and `/api/market/*` cache hit |
 | API | `/health`, `/webhooks/ghl`, `/api/leads`, and `/api/market/gwinnett` responses through the deployed domain |
 | Teardown | ECS scaled down, Terraform destroy completed, and billable resources removed |
+
+After apply, collect read-only CLI evidence with:
+
+```bash
+make deployment-evidence
+```
 
 ## Cost Profile
 
