@@ -7,6 +7,12 @@ This project should be deployed only long enough to capture evidence, then destr
 Run this only during an intentional validation window. Always review the plan before apply.
 Read [cost-estimate.md](cost-estimate.md) before applying in AWS.
 
+From the repository root, run the non-deploying preflight first:
+
+```bash
+make preflight
+```
+
 ```bash
 cd terraform/environments/dev
 terraform plan -out=tfplan

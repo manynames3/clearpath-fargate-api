@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 CHECKOV ?= .venv/bin/checkov
 
-.PHONY: install test validate validate-terraform validate-security deployment-evidence dev dev-detached seed smoke logs stop clean dev-local seed-local clean-local
+.PHONY: install test validate validate-terraform validate-security preflight deployment-evidence dev dev-detached seed smoke logs stop clean dev-local seed-local clean-local
 
 install:
 	python3 -m venv .venv
@@ -21,6 +21,9 @@ validate-terraform:
 validate-security:
 	$(CHECKOV) -d terraform/ --framework terraform --quiet
 	$(CHECKOV) -d k8s/ --framework kubernetes --quiet
+
+preflight:
+	scripts/preflight.sh
 
 deployment-evidence:
 	scripts/collect-deployment-evidence.sh

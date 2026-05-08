@@ -34,6 +34,12 @@ Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel webhook setup and payload mapping.
 
+Before opening an AWS validation window, run:
+
+```bash
+make preflight
+```
+
 ## Local Quick Start
 
 The fastest local run is Docker Compose: FastAPI plus Postgres, no AWS resources.

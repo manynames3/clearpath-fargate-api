@@ -11,10 +11,13 @@ terraform -chdir=terraform/environments/dev validate
 
 ## Before Apply
 
-1. Set `route53_zone_id` in `terraform/environments/dev/terraform.tfvars`.
-2. Review `api_domain_name` and `origin_domain_name`.
-3. Run `terraform plan -out=tfplan` from `terraform/environments/dev`.
-4. Review the full plan output before applying.
+1. Run `make preflight` from the repository root.
+2. Set `route53_zone_id` in `terraform/environments/dev/terraform.tfvars` if DNS/ACM should be created.
+3. Review `api_domain_name` and `origin_domain_name`.
+4. Run `terraform plan -out=tfplan` from `terraform/environments/dev`.
+5. Review the full plan output before applying.
+
+`make preflight` is non-deploying. It checks tools, AWS identity, Terraform settings, local tests, Terraform validation, and Checkov. It does not run `terraform plan`, `terraform apply`, Docker image builds, image pushes, or AWS create/update/delete commands.
 
 ## After Apply
 
