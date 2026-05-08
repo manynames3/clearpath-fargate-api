@@ -4,6 +4,8 @@ Clearpath Lead Intelligence API receives GoHighLevel contact webhooks, stores le
 
 GoHighLevel is connected through a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping and webhook authentication.
 
+Architecture decision records are maintained in [decisions](decisions/README.md).
+
 ```mermaid
 sequenceDiagram
     participant Client as Client or GHL

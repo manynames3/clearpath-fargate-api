@@ -33,6 +33,7 @@ Use [docs/deployment-evidence-template.md](docs/deployment-evidence-template.md)
 Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel webhook setup and payload mapping.
+See [docs/decisions](docs/decisions/README.md) for architecture decision records.
 
 Before opening an AWS validation window, run:
 
@@ -120,6 +121,8 @@ curl -X POST http://localhost:8000/webhooks/ghl \
 | Secrets Manager | RDS-managed database credentials and webhook HMAC secrets stay out of code and Terraform variable values. |
 | WAF | AWS managed rules and webhook rate limiting protect the CloudFront edge. |
 | Kubernetes/EKS manifests | Included as an optional platform track for portable container operations. ECS remains the cost-controlled AWS deployment path. |
+
+Detailed decision records are maintained in [docs/decisions](docs/decisions/README.md).
 
 ## RDS vs. Aurora Decision Rationale
 
