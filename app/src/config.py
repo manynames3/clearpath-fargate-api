@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     db_name: str = Field(default="clearpath", alias="DB_NAME")
     db_user: str = Field(default="clearpath_app", alias="DB_USER")
     ghl_webhook_secret: str | None = Field(default=None, alias="GHL_WEBHOOK_SECRET")
+    clearpath_api_key_secret: str | None = Field(default=None, alias="CLEARPATH_API_KEY_SECRET")
     skip_db_init: bool = Field(default=False, alias="SKIP_DB_INIT")
     local_create_tables: bool = Field(default=False, alias="LOCAL_CREATE_TABLES")
 

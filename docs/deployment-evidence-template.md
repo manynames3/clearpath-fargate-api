@@ -48,6 +48,16 @@ Expected:
 ```
 
 ```bash
+curl -f https://api.clearpathpropertygroup.com/ready
+```
+
+Expected:
+
+```json
+{"status":"ready","service":"clearpath-api"}
+```
+
+```bash
 curl -X POST https://api.clearpathpropertygroup.com/webhooks/ghl \
   -H "Content-Type: application/json" \
   -H "X-Clearpath-Webhook-Secret: <redacted>" \
@@ -61,7 +71,8 @@ Expected:
 ```
 
 ```bash
-curl -f "https://api.clearpathpropertygroup.com/api/leads?county=Gwinnett&status=warm"
+curl -f "https://api.clearpathpropertygroup.com/api/leads?county=Gwinnett&status=warm" \
+  -H "X-Clearpath-API-Key: <redacted>"
 ```
 
 Expected: the webhook lead appears with property data.

@@ -211,6 +211,14 @@ resource "aws_cloudfront_distribution" "api" {
     domain_name = var.origin_domain_name
     origin_id   = "alb-origin"
 
+    dynamic "custom_header" {
+      for_each = var.origin_header_value == null ? [] : [var.origin_header_value]
+      content {
+        name  = var.origin_header_name
+        value = custom_header.value
+      }
+    }
+
     custom_origin_config {
       http_port              = 80
       https_port             = 443

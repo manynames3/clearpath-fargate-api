@@ -109,10 +109,13 @@ module "ecs" {
   database_secret_arn     = module.rds.master_user_secret_arn
   rds_proxy_endpoint      = module.rds.rds_proxy_endpoint
   ghl_webhook_secret_arn  = module.iam.ghl_webhook_secret_arn
+  api_key_secret_arn      = module.iam.api_key_secret_arn
   acm_cert_arn            = module.dns_certificate.certificate_arn
   create_https_listener   = true
   desired_count           = var.ecs_desired_count
   alb_deletion_protection = var.alb_deletion_protection
+  origin_header_name      = var.origin_header_name
+  origin_header_value     = var.origin_header_value
 }
 
 module "cloudfront" {
@@ -122,11 +125,13 @@ module "cloudfront" {
     aws = aws.us_east_1
   }
 
-  project            = var.project
-  env                = var.env
-  api_domain_name    = var.api_domain_name
-  origin_domain_name = var.origin_domain_name
-  acm_cert_arn       = module.dns_certificate.certificate_arn
+  project             = var.project
+  env                 = var.env
+  api_domain_name     = var.api_domain_name
+  origin_domain_name  = var.origin_domain_name
+  acm_cert_arn        = module.dns_certificate.certificate_arn
+  origin_header_name  = var.origin_header_name
+  origin_header_value = var.origin_header_value
 }
 
 module "dns_records" {

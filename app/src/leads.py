@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth import require_leads_api_key
 from src.database import get_session
 from src.models import FollowUp, Lead, Property
 from src.schemas import LeadResponse, LeadsPage, PropertyResponse
@@ -17,6 +18,7 @@ async def list_leads(
     status: str | None = None,
     days_since_contact: int | None = Query(default=None, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
+    _api_key: None = Depends(require_leads_api_key),
     session: AsyncSession = Depends(get_session),
 ):
     last_contacted_at = (

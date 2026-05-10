@@ -13,6 +13,11 @@ output "ghl_webhook_secret_arn" {
   value       = aws_secretsmanager_secret.ghl_webhook.arn
 }
 
+output "api_key_secret_arn" {
+  description = "Secrets Manager ARN for the protected lead query API key."
+  value       = aws_secretsmanager_secret.api_key.arn
+}
+
 output "app_secrets_kms_key_arn" {
   description = "KMS key ARN for app-owned Secrets Manager secrets."
   value       = aws_kms_key.app_secrets.arn

@@ -49,6 +49,9 @@ jobs:
         with:
           dockerfile: app/Dockerfile
 
+      - name: Build Docker image
+        run: docker build -t clearpath-api:test .
+
   build-push:
     needs: test
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy }}

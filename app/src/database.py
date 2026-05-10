@@ -90,6 +90,10 @@ async def init_db() -> None:
             await conn.run_sync(Base.metadata.create_all)
         return
 
+    await check_database_ready()
+
+
+async def check_database_ready() -> None:
     async with get_engine().connect() as conn:
         await conn.execute(text("SELECT 1"))
 

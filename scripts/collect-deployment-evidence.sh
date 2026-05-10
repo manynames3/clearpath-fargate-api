@@ -6,6 +6,7 @@ TF_DIR="$ROOT_DIR/terraform/environments/dev"
 STAMP="$(date -u +"%Y%m%dT%H%M%SZ")"
 OUT_DIR="${1:-$ROOT_DIR/docs/evidence/$STAMP}"
 API_BASE_URL="${API_BASE_URL:-https://api.clearpathpropertygroup.com}"
+CLEARPATH_API_KEY="${CLEARPATH_API_KEY:-}"
 
 mkdir -p "$OUT_DIR"
 
@@ -75,7 +76,17 @@ if [[ -n "$CLOUDWATCH_DASHBOARD_NAME" ]]; then
 fi
 
 capture api-health curl -i -f "$API_BASE_URL/health"
+capture api-ready curl -i -f "$API_BASE_URL/ready"
 capture api-market curl -i -f "$API_BASE_URL/api/market/gwinnett"
+
+if [[ -n "$CLEARPATH_API_KEY" ]]; then
+  {
+    printf '$ curl -i -f %q -H %q\n\n' "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" "X-Clearpath-API-Key: <redacted>"
+    curl -i -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" -H "X-Clearpath-API-Key: $CLEARPATH_API_KEY"
+  } >"$OUT_DIR/api-leads.txt" 2>&1
+else
+  echo "Skipping protected leads capture; set CLEARPATH_API_KEY to include it." >"$OUT_DIR/api-leads.txt"
+fi
 
 cat >"$OUT_DIR/README.md" <<EOF
 # Deployment Evidence

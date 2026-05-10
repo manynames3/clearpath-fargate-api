@@ -132,6 +132,8 @@ Then confirm the upsert:
 curl -f "http://localhost:8000/api/leads?county=Gwinnett&status=warm"
 ```
 
+In the deployed environment, lead queries are protected. Include `X-Clearpath-API-Key` with the value stored in the `clearpath/dev/api-key` Secrets Manager secret.
+
 ## Later GHL API Work
 
 If Clearpath needs two-way CRM sync later, add a separate GHL API client with:

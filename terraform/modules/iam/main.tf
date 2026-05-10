@@ -106,6 +106,18 @@ resource "aws_secretsmanager_secret" "ghl_webhook" {
   })
 }
 
+resource "aws_secretsmanager_secret" "api_key" {
+  #checkov:skip=CKV2_AWS_57:API key value is loaded out-of-band to avoid plaintext in Terraform state; external rotation is documented in the runbook.
+  name                    = "clearpath/${var.env}/api-key"
+  description             = "API key for protected Clearpath lead query endpoints"
+  kms_key_id              = aws_kms_key.app_secrets.arn
+  recovery_window_in_days = 0
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.env}-api-key"
+  })
+}
+
 data "aws_iam_policy_document" "ecs_tasks_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -135,7 +147,8 @@ data "aws_iam_policy_document" "ecs_task" {
     ]
     resources = [
       var.database_secret_arn,
-      aws_secretsmanager_secret.ghl_webhook.arn
+      aws_secretsmanager_secret.ghl_webhook.arn,
+      aws_secretsmanager_secret.api_key.arn
     ]
   }
 

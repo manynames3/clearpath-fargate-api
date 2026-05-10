@@ -13,6 +13,20 @@ From the repository root, run the non-deploying preflight first:
 make preflight
 ```
 
+## Paid Window Evidence Checklist
+
+Keep the live window focused on evidence, not extra build work:
+
+- Run and save the reviewed Terraform plan.
+- Apply once, then capture the Terraform summary and key outputs.
+- Confirm CloudFront sends the origin header and ALB listener rules require it.
+- Trigger GitHub Actions `Build and Deploy` manually with `deploy=true`.
+- Capture ECS service health, task health, ALB target health, RDS Proxy target health, CloudFront deployed status, and WAF attachment.
+- Run API smoke tests through the custom domain, including `/health`, `/ready`, `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett`.
+- Capture CloudFront cache headers on the second market endpoint request.
+- Run `make deployment-evidence` to save read-only AWS CLI output.
+- Destroy the stack the same day and capture the destroy summary.
+
 ```bash
 cd terraform/environments/dev
 terraform plan -out=tfplan
@@ -36,7 +50,9 @@ After apply, capture:
 - WAF WebACL attached to CloudFront
 - CloudWatch dashboard and alarms
 - API health response through the custom domain
+- API readiness response proving database connectivity through the custom domain
 - GoHighLevel webhook test returning `{"status":"accepted"}` and creating a lead
+- protected `/api/leads` response using `X-Clearpath-API-Key`
 - `/api/market/gwinnett` response with cache headers
 
 Use [deployment-evidence-template.md](deployment-evidence-template.md) as the screenshot and command-output checklist. Store screenshots in `docs/screenshots/`.

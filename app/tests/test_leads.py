@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
+from src.config import get_settings
 from src.database import get_session_factory
 from src.models import FollowUp, Lead, Property
 
@@ -26,3 +27,30 @@ async def test_leads_filters_by_days_since_contact(client):
 
     assert response.status_code == 200
     assert response.json()["count"] == 1
+
+
+async def test_leads_requires_api_key_when_configured(client, monkeypatch):
+    monkeypatch.setenv("CLEARPATH_API_KEY_SECRET", "lead-api-key")
+    get_settings.cache_clear()
+
+    response = await client.get("/api/leads")
+
+    assert response.status_code == 401
+
+
+async def test_leads_rejects_invalid_api_key(client, monkeypatch):
+    monkeypatch.setenv("CLEARPATH_API_KEY_SECRET", "lead-api-key")
+    get_settings.cache_clear()
+
+    response = await client.get("/api/leads", headers={"X-Clearpath-API-Key": "wrong"})
+
+    assert response.status_code == 401
+
+
+async def test_leads_accepts_valid_api_key(client, monkeypatch):
+    monkeypatch.setenv("CLEARPATH_API_KEY_SECRET", "lead-api-key")
+    get_settings.cache_clear()
+
+    response = await client.get("/api/leads", headers={"X-Clearpath-API-Key": "lead-api-key"})
+
+    assert response.status_code == 200

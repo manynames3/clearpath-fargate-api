@@ -1,6 +1,7 @@
 .terraform/
 terraform.tfstate
 terraform.tfstate.*
+terraform/environments/*/backend.tf
 *.tfplan
 crash.log
 crash.*.log
@@ -15,6 +16,7 @@ build/
 clearpath-local.db
 docs/evidence/*
 !docs/evidence/.gitkeep
+docs/finish-line-review.*
 
 .env
 .DS_Store

@@ -68,6 +68,11 @@ output "ghl_webhook_secret_arn" {
   value       = module.iam.ghl_webhook_secret_arn
 }
 
+output "api_key_secret_arn" {
+  description = "Protected lead query API key secret ARN."
+  value       = module.iam.api_key_secret_arn
+}
+
 output "ecr_repository_url" {
   description = "ECR repository URL."
   value       = module.ecs.ecr_repository_url

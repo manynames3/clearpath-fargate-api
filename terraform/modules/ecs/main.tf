@@ -9,7 +9,8 @@ locals {
     ManagedBy   = "terraform"
   }
 
-  log_group_arn = "arn:${data.aws_partition.current.partition}:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:${var.ecs_log_group_name}"
+  log_group_arn            = "arn:${data.aws_partition.current.partition}:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:${var.ecs_log_group_name}"
+  origin_header_conditions = var.origin_header_value == null ? [] : [var.origin_header_value]
 }
 
 data "aws_iam_policy_document" "ecs_kms" {
@@ -284,7 +285,17 @@ resource "aws_lb_listener_rule" "health" {
 
   condition {
     path_pattern {
-      values = ["/health"]
+      values = ["/health", "/ready"]
+    }
+  }
+
+  dynamic "condition" {
+    for_each = local.origin_header_conditions
+    content {
+      http_header {
+        http_header_name = var.origin_header_name
+        values           = [condition.value]
+      }
     }
   }
 
@@ -310,6 +321,16 @@ resource "aws_lb_listener_rule" "webhooks" {
     }
   }
 
+  dynamic "condition" {
+    for_each = local.origin_header_conditions
+    content {
+      http_header {
+        http_header_name = var.origin_header_name
+        values           = [condition.value]
+      }
+    }
+  }
+
   tags = merge(local.common_tags, {
     Name = "${var.project}-${var.env}-webhooks"
   })
@@ -329,6 +350,16 @@ resource "aws_lb_listener_rule" "api" {
   condition {
     path_pattern {
       values = ["/api/*"]
+    }
+  }
+
+  dynamic "condition" {
+    for_each = local.origin_header_conditions
+    content {
+      http_header {
+        http_header_name = var.origin_header_name
+        values           = [condition.value]
+      }
     }
   }
 
@@ -373,7 +404,8 @@ resource "aws_ecs_task_definition" "api" {
         { name = "DB_USER", value = var.database_username },
         { name = "DB_SECRET_ARN", value = var.database_secret_arn },
         { name = "DB_PROXY_ENDPOINT", value = var.rds_proxy_endpoint },
-        { name = "GHL_WEBHOOK_SECRET", value = var.ghl_webhook_secret_arn }
+        { name = "GHL_WEBHOOK_SECRET", value = var.ghl_webhook_secret_arn },
+        { name = "CLEARPATH_API_KEY_SECRET", value = var.api_key_secret_arn }
       ]
 
       readonlyRootFilesystem = true

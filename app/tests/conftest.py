@@ -12,6 +12,7 @@ async def client(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
     monkeypatch.setenv("ENVIRONMENT", "test")
     monkeypatch.delenv("GHL_WEBHOOK_SECRET", raising=False)
+    monkeypatch.delenv("CLEARPATH_API_KEY_SECRET", raising=False)
     get_settings.cache_clear()
     await reset_engine_for_tests()
     await create_all_for_tests()

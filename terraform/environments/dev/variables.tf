@@ -149,3 +149,17 @@ variable "route53_zone_id" {
   type        = string
   default     = ""
 }
+
+variable "origin_header_name" {
+  description = "Custom header name CloudFront sends and ALB listener rules require when origin protection is enabled."
+  type        = string
+  default     = "X-Clearpath-Origin-Token"
+}
+
+variable "origin_header_value" {
+  description = "Custom header value CloudFront sends and ALB listener rules require. Set through TF_VAR_origin_header_value for deployment; do not commit real values."
+  type        = string
+  default     = null
+  sensitive   = true
+  nullable    = true
+}

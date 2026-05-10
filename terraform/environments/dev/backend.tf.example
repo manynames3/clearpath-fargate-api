@@ -1,0 +1,13 @@
+# Copy this file to backend.tf only when you are ready to use remote state.
+# Backend blocks cannot use Terraform variables, so keep real bucket names,
+# account-specific prefixes, and regions out of the public repo.
+
+terraform {
+  backend "s3" {
+    bucket       = "<terraform-state-bucket>"
+    key          = "clearpath-fargate-api/dev/terraform.tfstate"
+    region       = "<aws-region>"
+    encrypt      = true
+    use_lockfile = true
+  }
+}

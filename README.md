@@ -34,6 +34,7 @@ Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel webhook setup and payload mapping.
 Use [docs/github-deploy-setup.md](docs/github-deploy-setup.md) for the manual GitHub Actions image deployment path.
+Use [docs/terraform-backend.md](docs/terraform-backend.md) before moving from local state to remote Terraform state.
 See [docs/decisions](docs/decisions/README.md) for architecture decision records.
 
 Before opening an AWS validation window, run:
@@ -191,9 +192,10 @@ Security group flow is intentionally narrow:
 ## Endpoints
 
 - `POST /webhooks/ghl` - GoHighLevel contact webhook ingestion
-- `GET /api/leads?county=Gwinnett&status=warm&days_since_contact=30`
+- `GET /api/leads?county=Gwinnett&status=warm&days_since_contact=30` - protected with `X-Clearpath-API-Key` when configured
 - `GET /api/market/gwinnett`
 - `GET /health`
+- `GET /ready` - database readiness check
 
 ## Local Validation
 
@@ -233,7 +235,7 @@ When validating the stack in AWS, capture artifacts that show the build ran end 
 | ECS/Fargate | Cluster, service, two running tasks, task definition, and CloudWatch logs |
 | Database | RDS PostgreSQL private accessibility, encryption, Secrets Manager integration, and RDS Proxy healthy target |
 | Edge | CloudFront distribution deployed, WAF attached, custom domain behavior, and `/api/market/*` cache hit |
-| API | `/health`, `/webhooks/ghl`, `/api/leads`, and `/api/market/gwinnett` responses through the deployed domain |
+| API | `/health`, `/ready`, `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett` responses through the deployed domain |
 | Teardown | ECS scaled down, Terraform destroy completed, and billable resources removed |
 
 After apply, collect read-only CLI evidence with:

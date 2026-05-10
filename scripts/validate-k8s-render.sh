@@ -12,6 +12,10 @@ elif command -v kustomize >/dev/null 2>&1; then
 else
   echo "[warn] kubectl or kustomize not found; skipping Kubernetes render validation"
   echo "[warn] Install kubectl or kustomize to validate k8s/overlays/local and k8s/overlays/eks"
+  if [[ "${REQUIRE_K8S_RENDER:-false}" == "true" ]]; then
+    echo "[fail] Kubernetes render validation is required in this environment" >&2
+    exit 1
+  fi
   exit 0
 fi
 
