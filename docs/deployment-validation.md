@@ -31,7 +31,8 @@ Keep the live window focused on evidence, not extra build work:
 - Confirm CloudFront sends the origin header and ALB listener rules require it.
 - Trigger GitHub Actions `Build and Deploy` manually with `deploy=true`.
 - Capture ECS service health, task health, ALB target health, RDS Proxy target health, CloudFront deployed status, and WAF attachment.
-- Run API smoke tests through `api_base_url`, including `/health`, `/ready`, `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett`.
+- Run API smoke tests through `api_base_url`, including `/health`, `/ready`, a GHL-style test payload to `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett`.
+- If a real GoHighLevel account is available, configure the GHL Workflow Custom Webhook and capture the workflow delivery log. Otherwise, document the endpoint as GHL-ready but not externally connected.
 - Capture CloudFront cache headers on the second market endpoint request.
 - Run `make deployment-evidence` to save read-only AWS CLI output.
 - Destroy the stack the same day and capture the destroy summary.
@@ -60,7 +61,8 @@ After apply, capture:
 - CloudWatch dashboard and alarms
 - API health response through `api_base_url`
 - API readiness response proving database connectivity through `api_base_url`
-- GoHighLevel webhook test returning `{"status":"accepted"}` and creating a lead
+- GHL-style webhook receiver test returning `{"status":"accepted"}` and creating a lead
+- optional real GoHighLevel workflow delivery log, if a GHL account/location was connected during the validation window
 - protected `/api/leads` response using `X-Clearpath-API-Key`
 - `/api/market/gwinnett` response with cache headers
 

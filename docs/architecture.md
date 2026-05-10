@@ -1,14 +1,14 @@
 # Architecture
 
-Clearpath Lead Intelligence API receives GoHighLevel contact webhooks, stores lead/property/follow-up data in RDS PostgreSQL, and serves query and market snapshot endpoints through CloudFront.
+Clearpath Lead Intelligence API exposes a GoHighLevel-compatible webhook receiver, stores lead/property/follow-up data in RDS PostgreSQL, and serves query and market snapshot endpoints through CloudFront.
 
-GoHighLevel is connected through a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping and webhook authentication.
+The intended GoHighLevel connection is a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping, webhook authentication, and the external GHL setup still required for live delivery.
 
 Architecture decision records are maintained in [decisions](decisions/README.md).
 
 ```mermaid
 sequenceDiagram
-    participant Client as Client or GHL
+    participant Client as Client or GHL Workflow
     participant CF as CloudFront
     participant WAF as AWS WAF
     participant ALB as ALB
@@ -56,7 +56,7 @@ The deployed network is a three-tier VPC in `us-east-1` with two Availability Zo
 
 ```mermaid
 flowchart TB
-    internet["Internet clients and GHL"] --> cloudfront["CloudFront + WAF"]
+    internet["Internet clients and optional GHL workflow"] --> cloudfront["CloudFront + WAF"]
     cloudfront --> alb["Public subnets: ALB"]
     alb --> ecs["Private app subnets: ECS Fargate"]
     ecs --> proxy["Private app subnets: RDS Proxy"]

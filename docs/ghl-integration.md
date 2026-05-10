@@ -1,23 +1,30 @@
 # GoHighLevel Integration
 
-Clearpath ingests GoHighLevel contact events through `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: GHL sends lead/contact data to this API, and the API upserts the lead plus property details into PostgreSQL. The app does not call the GHL API yet.
+Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: a configured GHL workflow can send lead/contact data to this API, and the API upserts the lead plus property details into PostgreSQL. The app does not call the GHL API yet.
+
+## Current Status
+
+The repository includes the receiving endpoint, payload mapping, shared-secret validation, local tests, and AWS infrastructure needed to accept GHL-style webhook payloads. A live GoHighLevel workflow has not been connected or captured as evidence yet.
+
+To prove the external integration, configure a GHL Workflow Custom Webhook during a future validation window, send a real workflow event to the deployed CloudFront URL, and capture the GHL delivery log plus the resulting lead query from this API.
 
 ## Recommended Setup
 
 For this project stage, use a GoHighLevel Workflow Custom Webhook action. It is the simplest fit because Clearpath only needs outbound contact data from GHL into the API.
 
-1. Create or edit a GHL workflow for new motivated-seller leads.
-2. Add a Custom Webhook action.
-3. Set method to `POST`.
-4. Set the URL to the deployed endpoint. For the default no-domain validation path, read the base URL from Terraform:
+1. Confirm access to the correct GHL account/location.
+2. Create or edit a GHL workflow for new motivated-seller leads.
+3. Add a Custom Webhook action.
+4. Set method to `POST`.
+5. Set the URL to the deployed endpoint. For the default no-domain validation path, read the base URL from Terraform:
 
 ```bash
 export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw api_base_url)"
 echo "$API_BASE_URL/webhooks/ghl"
 ```
 
-5. Send JSON with the mapped contact and property fields.
-6. Add a shared secret header if enabled:
+6. Send JSON with the mapped contact and property fields.
+7. Add a shared secret header if enabled:
 
 ```text
 X-Clearpath-Webhook-Secret: <secret value from Secrets Manager>

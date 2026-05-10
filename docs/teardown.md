@@ -51,3 +51,21 @@ aws cloudfront list-distributions --query 'DistributionList.Items[?Comment==`cle
 ```
 
 The expected result after teardown is no Clearpath ECS clusters, RDS database instances, or CloudFront distributions.
+
+## Post-Destroy Notes
+
+After `terraform apply destroy.tfplan` completes, run service-specific verification instead of relying only on the Resource Groups Tagging API. The tagging API can temporarily show deleted, inactive, or pending-deletion resources after a destroy.
+
+Expected post-destroy states:
+
+- Terraform state list is empty.
+- ECS cluster is `INACTIVE`; active task definition count is `0`.
+- RDS database instance is not found.
+- RDS Proxy is not found.
+- ALB is not found.
+- CloudFront distribution is not found.
+- VPC, security groups, and VPC endpoints with `Project=clearpath-api` are not found.
+- Customer-managed KMS keys are `PendingDeletion` because AWS enforces a deletion window.
+- Secrets Manager project secrets are not listed.
+
+Inactive ECS task definition revisions and KMS keys pending deletion are normal AWS teardown artifacts. They do not mean the application stack is still running.

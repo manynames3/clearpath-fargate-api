@@ -9,7 +9,23 @@ This repository is built as a production-pattern AWS Terraform project for Clear
 
 ## Deployment Status
 
-This repo is currently built and validated locally only. Do not run `terraform apply` until you intentionally want to create billable AWS resources.
+This repo has been validated locally and through a short-lived AWS deployment. The AWS stack is currently destroyed to avoid ongoing ECS, ALB, RDS, RDS Proxy, NAT, CloudFront, WAF, and logging charges. Do not run `terraform apply` again until you intentionally want to create billable AWS resources.
+
+## Live AWS Validation
+
+A short-lived AWS validation run was completed on 2026-05-10 and torn down afterward with Terraform. The run validated the production-style deployment path:
+
+- Terraform plan reviewed before apply; destroy completed with all Terraform-managed resources removed
+- ECS Fargate service reached two healthy running tasks
+- ALB API and webhook target groups reported healthy targets
+- RDS PostgreSQL ran in private database subnets behind RDS Proxy
+- CloudFront served the API health endpoint with WAF attached
+- CloudWatch metrics and alarms were visible during the run
+- VPC resource map showed public, private ECS, and private database subnet tiers
+
+Raw AWS console screenshots are intentionally kept out of Git because they contain account metadata, ARNs, generated endpoints, and secret ARNs. Public screenshots should be redacted before publication. See [docs/live-validation-summary.md](docs/live-validation-summary.md) for the evidence summary and teardown notes.
+
+The GoHighLevel work is accurately scoped as a GHL-compatible webhook receiver. A live external GHL Workflow Custom Webhook still requires account/location access, workflow configuration, shared secret setup, and delivery-log evidence.
 
 ## Ephemeral Deployment Strategy
 
@@ -34,7 +50,7 @@ See [docs/deployment-validation.md](docs/deployment-validation.md) for the short
 Use [docs/deployment-evidence-template.md](docs/deployment-evidence-template.md) when capturing screenshots and command output.
 Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
-Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel webhook setup and payload mapping.
+Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel-ready webhook receiver, setup requirements, and payload mapping.
 Use [docs/github-deploy-setup.md](docs/github-deploy-setup.md) for the manual GitHub Actions image deployment path.
 Use [docs/terraform-backend.md](docs/terraform-backend.md) before moving from local state to remote Terraform state.
 See [docs/decisions](docs/decisions/README.md) for architecture decision records.
@@ -159,7 +175,7 @@ Aurora PostgreSQL becomes the next database option if webhook volume, concurrent
 
 ```mermaid
 flowchart LR
-    client["GHL / API client"] --> cf["CloudFront generated domain"]
+    client["GHL workflow or API client"] --> cf["CloudFront generated domain"]
     cf --> waf["AWS WAF WebACL"]
     waf --> alb["ALB listener restricted to CloudFront"]
     alb --> ecs["ECS Fargate clearpath-api"]
@@ -192,7 +208,7 @@ Security group flow is intentionally narrow:
 
 ## Endpoints
 
-- `POST /webhooks/ghl` - GoHighLevel contact webhook ingestion
+- `POST /webhooks/ghl` - GoHighLevel-compatible contact webhook ingestion
 - `GET /api/leads?county=Gwinnett&status=warm&days_since_contact=30` - protected with `X-Clearpath-API-Key` when configured
 - `GET /api/market/gwinnett`
 - `GET /health`

@@ -75,6 +75,8 @@ Expected:
 {"status":"accepted","lead_id":"<uuid>"}
 ```
 
+This proves the deployed receiver accepts a GHL-style payload. To prove the external GoHighLevel integration, also capture the GHL Workflow Custom Webhook delivery log from the GHL account/location used for validation.
+
 ```bash
 curl -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" \
   -H "X-Clearpath-API-Key: <redacted>"
