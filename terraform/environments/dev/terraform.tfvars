@@ -9,17 +9,19 @@ public_subnet_cidrs           = ["10.0.1.0/24", "10.0.2.0/24"]
 private_ecs_subnet_cidrs      = ["10.0.10.0/24", "10.0.11.0/24"]
 private_database_subnet_cidrs = ["10.0.20.0/24", "10.0.21.0/24"]
 
-database_name                = "clearpath"
-master_username              = "clearpath_admin"
-postgres_engine_version      = "15.7"
-rds_instance_class           = "db.t4g.micro"
-rds_allocated_storage_gb     = 20
-rds_max_allocated_storage_gb = 100
-rds_multi_az                 = false
-rds_deletion_protection      = false
-rds_skip_final_snapshot      = true
+database_name                   = "clearpath"
+master_username                 = "clearpath_admin"
+postgres_engine_version         = "15.7"
+rds_instance_class              = "db.t4g.micro"
+rds_allocated_storage_gb        = 20
+rds_max_allocated_storage_gb    = 100
+rds_backup_retention_days       = 0
+rds_monitoring_interval_seconds = 0
+rds_multi_az                    = false
+rds_deletion_protection         = false
+rds_skip_final_snapshot         = true
 
-app_database_username   = "clearpath_app"
+app_database_username   = "clearpath_admin"
 ecr_repository_name     = "clearpath/api"
 ecs_log_group_name      = "/ecs/clearpath-api"
 ecs_desired_count       = 2
@@ -31,3 +33,6 @@ origin_domain_name = "origin-api.example.com"
 
 # Empty keeps Route53 and ACM custom-domain resources disabled.
 route53_zone_id = ""
+
+github_deploy_repository = "manynames3/clearpath-fargate-api"
+github_deploy_branch     = "main"

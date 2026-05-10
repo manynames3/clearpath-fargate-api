@@ -7,6 +7,14 @@ This project should be deployed only long enough to capture evidence, then destr
 Run this only during an intentional validation window. Always review the plan before apply.
 Read [cost-estimate.md](cost-estimate.md) before applying in AWS.
 
+## AWS Account Plan Requirement
+
+Use an AWS account that allows paid resources before running the full validation apply. Some new AWS Free Tier plan accounts block resources that this stack intentionally uses, including RDS Proxy. In that case Terraform may fail with an AWS `FreeTierRestrictionError` when creating the proxy.
+
+For this project, RDS Proxy is not optional in the production-pattern architecture: ECS Fargate tasks connect through the proxy so database connections are pooled before reaching PostgreSQL. If the account is still on a restricted Free Tier plan, upgrade the account plan first, then rerun `terraform plan` and apply the reviewed continuation plan.
+
+The $100 Free Tier credit can still reduce eligible usage after upgrading, but it is not a hard spending cap. Keep the validation window short, capture evidence immediately, and destroy the stack the same day.
+
 From the repository root, run the non-deploying preflight first:
 
 ```bash
@@ -79,6 +87,7 @@ The default dev settings prioritize cost and clean teardown. For a real producti
 
 - use `terraform/environments/dev/production.tfvars.example` as the starting override file
 - enable RDS Multi-AZ
+- set retained RDS backups with `rds_backup_retention_days = 7` or higher
 - increase the RDS instance class after load testing
 - set `rds_deletion_protection = true`
 - set `rds_skip_final_snapshot = false` and provide `rds_final_snapshot_identifier`

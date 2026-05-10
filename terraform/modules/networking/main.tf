@@ -285,12 +285,15 @@ data "aws_iam_policy_document" "flow_logs_kms" {
       "kms:ListAliases",
       "kms:ListGrants",
       "kms:ListKeyPolicies",
+      "kms:ListResourceTags",
       "kms:PutKeyPolicy",
       "kms:ReEncryptFrom",
       "kms:ReEncryptTo",
       "kms:RetireGrant",
       "kms:RevokeGrant",
       "kms:ScheduleKeyDeletion",
+      "kms:TagResource",
+      "kms:UntagResource",
       "kms:UpdateAlias",
       "kms:UpdateKeyDescription"
     ]
@@ -414,6 +417,8 @@ resource "aws_security_group" "database" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb_from_cloudfront" {
+  count = var.allow_alb_https_from_cloudfront ? 1 : 0
+
   security_group_id = aws_security_group.alb.id
   description       = "HTTPS from CloudFront only"
   from_port         = 443

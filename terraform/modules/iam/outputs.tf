@@ -22,3 +22,8 @@ output "app_secrets_kms_key_arn" {
   description = "KMS key ARN for app-owned Secrets Manager secrets."
   value       = aws_kms_key.app_secrets.arn
 }
+
+output "github_deploy_role_arn" {
+  description = "GitHub Actions OIDC deploy role ARN, when enabled."
+  value       = try(aws_iam_role.github_actions_deploy[0].arn, "")
+}

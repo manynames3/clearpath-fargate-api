@@ -127,3 +127,8 @@ output "cloudwatch_dashboard_name" {
   description = "CloudWatch dashboard name."
   value       = module.observability.dashboard_name
 }
+
+output "github_deploy_role_arn" {
+  description = "GitHub Actions OIDC deploy role ARN."
+  value       = module.iam.github_deploy_role_arn
+}

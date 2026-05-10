@@ -88,6 +88,16 @@ variable "rds_max_allocated_storage_gb" {
   type        = number
 }
 
+variable "rds_backup_retention_days" {
+  description = "RDS backup retention in days. Dev validation may use 0 when AWS free-tier account restrictions reject retained backups."
+  type        = number
+}
+
+variable "rds_monitoring_interval_seconds" {
+  description = "RDS enhanced monitoring interval in seconds. Dev validation may use 0 when AWS account restrictions or cost controls require it."
+  type        = number
+}
+
 variable "rds_multi_az" {
   description = "Whether to run RDS in Multi-AZ mode. Keep false for cost-controlled validation."
   type        = bool
@@ -168,4 +178,16 @@ variable "origin_header_value" {
   default     = null
   sensitive   = true
   nullable    = true
+}
+
+variable "github_deploy_repository" {
+  description = "GitHub owner/repository allowed to assume the image deploy role. Empty disables the role."
+  type        = string
+  default     = ""
+}
+
+variable "github_deploy_branch" {
+  description = "GitHub branch allowed to assume the image deploy role."
+  type        = string
+  default     = "main"
 }

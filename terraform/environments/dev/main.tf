@@ -30,14 +30,15 @@ provider "aws" {
 module "networking" {
   source = "../../modules/networking"
 
-  project                       = var.project
-  env                           = var.env
-  aws_region                    = var.aws_region
-  vpc_cidr                      = var.vpc_cidr
-  availability_zones            = var.availability_zones
-  public_subnet_cidrs           = var.public_subnet_cidrs
-  private_ecs_subnet_cidrs      = var.private_ecs_subnet_cidrs
-  private_database_subnet_cidrs = var.private_database_subnet_cidrs
+  project                         = var.project
+  env                             = var.env
+  aws_region                      = var.aws_region
+  vpc_cidr                        = var.vpc_cidr
+  availability_zones              = var.availability_zones
+  public_subnet_cidrs             = var.public_subnet_cidrs
+  private_ecs_subnet_cidrs        = var.private_ecs_subnet_cidrs
+  private_database_subnet_cidrs   = var.private_database_subnet_cidrs
+  allow_alb_https_from_cloudfront = local.custom_domain_enabled
 }
 
 module "dns_certificate" {
@@ -60,37 +61,41 @@ module "dns_certificate" {
 module "rds" {
   source = "../../modules/rds"
 
-  project                   = var.project
-  env                       = var.env
-  aws_region                = var.aws_region
-  database_subnet_ids       = module.networking.private_database_subnet_ids
-  rds_proxy_subnet_ids      = module.networking.private_ecs_subnet_ids
-  database_sg_id            = module.networking.database_sg_id
-  rds_proxy_sg_id           = module.networking.rds_proxy_sg_id
-  database_name             = var.database_name
-  master_username           = var.master_username
-  engine_version            = var.postgres_engine_version
-  instance_class            = var.rds_instance_class
-  allocated_storage_gb      = var.rds_allocated_storage_gb
-  max_allocated_storage_gb  = var.rds_max_allocated_storage_gb
-  multi_az                  = var.rds_multi_az
-  deletion_protection       = var.rds_deletion_protection
-  skip_final_snapshot       = var.rds_skip_final_snapshot
-  final_snapshot_identifier = var.rds_final_snapshot_identifier
+  project                     = var.project
+  env                         = var.env
+  aws_region                  = var.aws_region
+  database_subnet_ids         = module.networking.private_database_subnet_ids
+  rds_proxy_subnet_ids        = module.networking.private_ecs_subnet_ids
+  database_sg_id              = module.networking.database_sg_id
+  rds_proxy_sg_id             = module.networking.rds_proxy_sg_id
+  database_name               = var.database_name
+  master_username             = var.master_username
+  engine_version              = var.postgres_engine_version
+  instance_class              = var.rds_instance_class
+  allocated_storage_gb        = var.rds_allocated_storage_gb
+  max_allocated_storage_gb    = var.rds_max_allocated_storage_gb
+  backup_retention_days       = var.rds_backup_retention_days
+  monitoring_interval_seconds = var.rds_monitoring_interval_seconds
+  multi_az                    = var.rds_multi_az
+  deletion_protection         = var.rds_deletion_protection
+  skip_final_snapshot         = var.rds_skip_final_snapshot
+  final_snapshot_identifier   = var.rds_final_snapshot_identifier
 }
 
 module "iam" {
   source = "../../modules/iam"
 
-  project               = var.project
-  env                   = var.env
-  aws_region            = var.aws_region
-  database_secret_arn   = module.rds.master_user_secret_arn
-  database_kms_key_arn  = module.rds.database_kms_key_arn
-  rds_proxy_resource_id = module.rds.rds_proxy_resource_id
-  database_username     = var.app_database_username
-  ecr_repository_name   = var.ecr_repository_name
-  ecs_log_group_name    = var.ecs_log_group_name
+  project                  = var.project
+  env                      = var.env
+  aws_region               = var.aws_region
+  database_secret_arn      = module.rds.master_user_secret_arn
+  database_kms_key_arn     = module.rds.database_kms_key_arn
+  rds_proxy_resource_id    = module.rds.rds_proxy_resource_id
+  database_username        = var.app_database_username
+  ecr_repository_name      = var.ecr_repository_name
+  ecs_log_group_name       = var.ecs_log_group_name
+  github_deploy_repository = var.github_deploy_repository
+  github_deploy_branch     = var.github_deploy_branch
 }
 
 module "ecs" {

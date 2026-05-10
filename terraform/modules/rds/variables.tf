@@ -81,6 +81,12 @@ variable "backup_retention_days" {
   default     = 7
 }
 
+variable "monitoring_interval_seconds" {
+  description = "Enhanced monitoring interval in seconds. Use 0 for cost-controlled ephemeral validation; use 60 for production-style runs."
+  type        = number
+  default     = 60
+}
+
 variable "multi_az" {
   description = "Whether to run RDS in Multi-AZ mode. Keep false for cost-controlled validation; enable for production availability."
   type        = bool

@@ -12,11 +12,12 @@ terraform -chdir=terraform/environments/dev validate
 ## Before Apply
 
 1. Run `make preflight` from the repository root.
-2. Keep `use_custom_domain = false` for the default no-domain validation path.
-3. Only set `use_custom_domain = true`, `route53_zone_id`, `api_domain_name`, and `origin_domain_name` if you own a domain and intentionally want Route53/ACM resources.
-4. Set `TF_VAR_origin_header_value` to a one-time high-entropy value for CloudFront-to-ALB origin protection.
-5. Run `terraform plan -out=tfplan` from `terraform/environments/dev`.
-6. Review the full plan output before applying.
+2. Confirm the AWS account is not on a restricted Free Tier plan that blocks paid services. RDS Proxy may fail with `FreeTierRestrictionError` until the account is upgraded to the paid plan.
+3. Keep `use_custom_domain = false` for the default no-domain validation path.
+4. Only set `use_custom_domain = true`, `route53_zone_id`, `api_domain_name`, and `origin_domain_name` if you own a domain and intentionally want Route53/ACM resources.
+5. Set `TF_VAR_origin_header_value` to a one-time high-entropy value for CloudFront-to-ALB origin protection.
+6. Run `terraform plan -out=tfplan` from `terraform/environments/dev`.
+7. Review the full plan output before applying.
 
 `make preflight` is non-deploying. It checks tools, AWS identity, Terraform settings, local tests, Terraform validation, and Checkov. It does not run `terraform plan`, `terraform apply`, Docker image builds, image pushes, or AWS create/update/delete commands.
 
@@ -67,6 +68,12 @@ scripts/migrate.sh
 Build and push the image through the manual GitHub Actions workflow described in [github-deploy-setup.md](github-deploy-setup.md). This is the preferred path because local Docker is not required. Use it only after the infrastructure is already applied and the GHL secret value is loaded.
 
 The deploy workflow is manual-gated. It only pushes an image and forces a new ECS deployment when run with `deploy=true`.
+
+## Free Tier Restriction Recovery
+
+If Terraform fails while creating RDS Proxy with an AWS Free Tier restriction, do not remove RDS Proxy from the architecture just to get past the apply. Upgrade the AWS account plan, rerun validation and Checkov, generate a fresh Terraform plan, review it, and apply that saved continuation plan.
+
+After the paid-plan upgrade, expect the continuation plan to create the RDS Proxy, RDS Proxy target, ECS task definition, ECS service, and any remaining observability resources. Then continue with the GitHub Actions image build/push flow.
 
 ## Health Checks
 

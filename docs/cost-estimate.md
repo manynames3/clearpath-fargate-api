@@ -6,6 +6,12 @@ Pricing changes by region, date, architecture, traffic, and free-tier eligibilit
 
 The default validation mode uses the generated CloudFront domain, so there is no domain registration cost and no Route53 hosted-zone maintenance cost. Route53/ACM custom-domain resources are optional and disabled unless `use_custom_domain = true`.
 
+## Free Tier and Paid Plan Note
+
+This stack uses paid AWS resources by design: ECS Fargate, ALB, NAT Gateway, RDS PostgreSQL, RDS Proxy, WAF, VPC endpoints, and CloudWatch. Some new AWS Free Tier plan accounts can block paid features before billing is fully enabled; RDS Proxy is one resource that may be rejected with `FreeTierRestrictionError`.
+
+Upgrade the AWS account to the paid plan before the full AWS validation run. Free Tier credits may still apply to eligible usage, but they do not prevent charges after credits are exhausted or when usage is not credit-eligible. Treat the validation run as billable from the start.
+
 ## Main Cost Drivers
 
 | Service | Why it costs money | Validation posture |
@@ -37,18 +43,21 @@ The biggest practical risk is forgetting hourly resources:
 ## Guardrails
 
 - Run `terraform plan` before apply and review every billable resource.
+- Keep `rds_backup_retention_days = 0` for the short free-tier validation if the account rejects retained backups; production should set retained backups explicitly.
 - Keep `rds_multi_az = false` for the short validation run.
 - Keep `rds_deletion_protection = false` and `alb_deletion_protection = false` for ephemeral teardown.
 - Keep `rds_skip_final_snapshot = true` for ephemeral teardown.
 - Capture evidence immediately after apply.
 - Run `scripts/teardown.sh` the same day.
 - Verify with AWS Console and CLI that ECS, RDS, CloudFront, NAT, and WAF resources are gone or deleting.
+- Do not leave the stack idle overnight just because Free Tier credits are available.
 
 ## Production Contrast
 
 For a real production deployment, the cost posture changes intentionally:
 
 - `rds_multi_az = true`
+- `rds_backup_retention_days = 7` or higher
 - larger RDS class after load testing
 - `rds_deletion_protection = true`
 - `rds_skip_final_snapshot = false`
@@ -59,6 +68,7 @@ That production posture is more resilient but less teardown-friendly. The dev de
 
 ## Pricing References
 
+- [AWS Free Tier plan docs](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html)
 - [AWS Fargate pricing](https://aws.amazon.com/fargate/pricing/)
 - [Elastic Load Balancing pricing](https://aws.amazon.com/elasticloadbalancing/pricing/)
 - [Amazon RDS for PostgreSQL pricing](https://aws.amazon.com/rds/postgresql/pricing/)

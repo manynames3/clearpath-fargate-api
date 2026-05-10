@@ -144,6 +144,7 @@ The default dev settings are intentionally cost-controlled. For a real productio
 
 - use `terraform/environments/dev/production.tfvars.example` as the starting override file
 - set `rds_multi_az = true`
+- set `rds_backup_retention_days = 7` or higher based on recovery requirements
 - choose a larger RDS class after load testing, such as `db.t4g.small` or `db.t4g.medium`
 - set `rds_deletion_protection = true`
 - set `rds_skip_final_snapshot = false` and provide `rds_final_snapshot_identifier`

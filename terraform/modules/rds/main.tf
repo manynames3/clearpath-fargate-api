@@ -37,12 +37,15 @@ data "aws_iam_policy_document" "database_kms" {
       "kms:ListAliases",
       "kms:ListGrants",
       "kms:ListKeyPolicies",
+      "kms:ListResourceTags",
       "kms:PutKeyPolicy",
       "kms:ReEncryptFrom",
       "kms:ReEncryptTo",
       "kms:RetireGrant",
       "kms:RevokeGrant",
       "kms:ScheduleKeyDeletion",
+      "kms:TagResource",
+      "kms:UntagResource",
       "kms:UpdateAlias",
       "kms:UpdateKeyDescription"
     ]
@@ -94,14 +97,20 @@ data "aws_iam_policy_document" "database_kms" {
     resources = ["*"]
 
     principals {
-      type        = "Service"
-      identifiers = ["secretsmanager.amazonaws.com"]
+      type        = "AWS"
+      identifiers = ["*"]
     }
 
     condition {
       test     = "StringEquals"
       variable = "kms:ViaService"
       values   = ["secretsmanager.${var.aws_region}.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "kms:CallerAccount"
+      values   = [data.aws_caller_identity.current.account_id]
     }
   }
 
@@ -241,6 +250,7 @@ resource "aws_db_instance" "main" {
   #checkov:skip=CKV_AWS_133:RDS-managed master user password creates the secret without plaintext in Terraform state.
   #checkov:skip=CKV_AWS_16:Final snapshots are controlled by var.skip_final_snapshot; dev defaults skip them for teardown, production should set false.
   #checkov:skip=CKV_AWS_293:Deletion protection is controlled by var.deletion_protection; dev defaults disable it for teardown, production should enable it.
+  #checkov:skip=CKV_AWS_118:Enhanced monitoring is parameterized; dev validation uses 0 for account/cost constraints and production.tfvars.example sets 60.
   #checkov:skip=CKV2_AWS_8:AWS Backup plan is intentionally omitted because this dev environment is disposable and teardown-first.
   identifier                          = local.db_identifier
   allocated_storage                   = var.allocated_storage_gb
@@ -260,8 +270,8 @@ resource "aws_db_instance" "main" {
   kms_key_id                          = aws_kms_key.database.arn
   manage_master_user_password         = true
   master_user_secret_kms_key_id       = aws_kms_key.database.arn
-  monitoring_interval                 = 60
-  monitoring_role_arn                 = aws_iam_role.rds_enhanced_monitoring.arn
+  monitoring_interval                 = var.monitoring_interval_seconds
+  monitoring_role_arn                 = var.monitoring_interval_seconds > 0 ? aws_iam_role.rds_enhanced_monitoring.arn : null
   multi_az                            = var.multi_az
   parameter_group_name                = aws_db_parameter_group.main.name
   performance_insights_enabled        = true

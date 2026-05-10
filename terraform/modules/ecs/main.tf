@@ -35,12 +35,15 @@ data "aws_iam_policy_document" "ecs_kms" {
       "kms:ListAliases",
       "kms:ListGrants",
       "kms:ListKeyPolicies",
+      "kms:ListResourceTags",
       "kms:PutKeyPolicy",
       "kms:ReEncryptFrom",
       "kms:ReEncryptTo",
       "kms:RetireGrant",
       "kms:RevokeGrant",
       "kms:ScheduleKeyDeletion",
+      "kms:TagResource",
+      "kms:UntagResource",
       "kms:UpdateAlias",
       "kms:UpdateKeyDescription"
     ]
@@ -544,7 +547,7 @@ resource "aws_ecs_task_definition" "api" {
       }
 
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+        command     = ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).read()\""]
         interval    = 30
         timeout     = 5
         retries     = 3

@@ -6,6 +6,8 @@
 # terraform plan -var-file=terraform.tfvars -var-file=production.tfvars.example -out=tfplan
 
 rds_instance_class              = "db.t4g.small"
+rds_backup_retention_days       = 7
+rds_monitoring_interval_seconds = 60
 rds_multi_az                    = true
 rds_deletion_protection         = true
 rds_skip_final_snapshot         = false

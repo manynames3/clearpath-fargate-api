@@ -38,6 +38,12 @@ variable "private_database_subnet_cidrs" {
   type        = list(string)
 }
 
+variable "allow_alb_https_from_cloudfront" {
+  description = "Whether the ALB security group should allow HTTPS from the CloudFront origin-facing prefix list. Disabled in no-domain mode to stay under security group rule quotas."
+  type        = bool
+  default     = false
+}
+
 variable "interface_endpoint_services" {
   description = "AWS interface endpoint services ECS tasks need without public egress."
   type        = list(string)

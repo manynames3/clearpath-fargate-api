@@ -42,3 +42,15 @@ variable "ecs_log_group_name" {
   description = "CloudWatch log group name for ECS container logs."
   type        = string
 }
+
+variable "github_deploy_repository" {
+  description = "GitHub owner/repository allowed to assume the image deploy role. Empty disables the role."
+  type        = string
+  default     = ""
+}
+
+variable "github_deploy_branch" {
+  description = "GitHub branch allowed to assume the image deploy role."
+  type        = string
+  default     = "main"
+}
