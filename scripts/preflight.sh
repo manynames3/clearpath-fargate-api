@@ -83,10 +83,14 @@ else
   fail "terraform.tfvars not found at $TFVARS"
 fi
 
-if grep -Eq 'route53_zone_id[[:space:]]*=[[:space:]]*""' "$TFVARS"; then
-  warn "route53_zone_id is empty; DNS/ACM records remain disabled for local-only validation"
+if grep -Eq 'use_custom_domain[[:space:]]*=[[:space:]]*true' "$TFVARS"; then
+  if grep -Eq 'route53_zone_id[[:space:]]*=[[:space:]]*""' "$TFVARS"; then
+    fail "use_custom_domain=true requires a real route53_zone_id"
+  else
+    pass "custom-domain mode enabled and route53_zone_id appears to be set"
+  fi
 else
-  pass "route53_zone_id appears to be set"
+  pass "use_custom_domain=false; validation will use the generated CloudFront domain"
 fi
 
 if grep -Eq 'rds_multi_az[[:space:]]*=[[:space:]]*false' "$TFVARS"; then

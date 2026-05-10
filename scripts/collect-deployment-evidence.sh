@@ -5,7 +5,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TF_DIR="$ROOT_DIR/terraform/environments/dev"
 STAMP="$(date -u +"%Y%m%dT%H%M%SZ")"
 OUT_DIR="${1:-$ROOT_DIR/docs/evidence/$STAMP}"
-API_BASE_URL="${API_BASE_URL:-https://api.clearpathpropertygroup.com}"
 CLEARPATH_API_KEY="${CLEARPATH_API_KEY:-}"
 
 mkdir -p "$OUT_DIR"
@@ -46,6 +45,13 @@ DB_INSTANCE_IDENTIFIER="$(tf_output db_instance_identifier)"
 RDS_PROXY_NAME="$(tf_output rds_proxy_name)"
 CLOUDFRONT_DISTRIBUTION_ID="$(tf_output cloudfront_distribution_id)"
 CLOUDWATCH_DASHBOARD_NAME="$(tf_output cloudwatch_dashboard_name)"
+API_BASE_URL="${API_BASE_URL:-$(tf_output api_base_url)}"
+
+if [[ -z "$API_BASE_URL" ]]; then
+  echo "API_BASE_URL is not set and terraform output api_base_url is unavailable." >&2
+  echo "Run this after terraform apply, or export API_BASE_URL manually." >&2
+  exit 1
+fi
 
 capture terraform-outputs terraform -chdir="$TF_DIR" output
 capture vpcs aws ec2 describe-vpcs --filters Name=tag:Project,Values=clearpath-api

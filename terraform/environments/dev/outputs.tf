@@ -94,8 +94,18 @@ output "alb_dns_name" {
 }
 
 output "api_certificate_arn" {
-  description = "ACM certificate ARN used by ALB and CloudFront."
+  description = "ACM certificate ARN used by ALB and CloudFront when custom-domain mode is enabled."
   value       = module.dns_certificate.certificate_arn
+}
+
+output "custom_domain_enabled" {
+  description = "Whether this environment is using ACM/Route53 custom-domain mode."
+  value       = local.custom_domain_enabled
+}
+
+output "api_base_url" {
+  description = "Base URL for API smoke tests. Defaults to the generated CloudFront domain when no custom domain is configured."
+  value       = local.custom_domain_enabled ? "https://${var.api_domain_name}" : "https://${module.cloudfront.distribution_domain_name}"
 }
 
 output "cloudfront_domain_name" {

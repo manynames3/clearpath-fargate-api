@@ -19,7 +19,7 @@ variable "origin_domain_name" {
 }
 
 variable "route53_zone_id" {
-  description = "Route53 hosted zone ID. Empty string skips DNS records for local-only validation."
+  description = "Route53 hosted zone ID. Empty string skips custom-domain DNS records."
   type        = string
   default     = ""
 }

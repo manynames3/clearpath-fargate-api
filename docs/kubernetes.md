@@ -19,6 +19,8 @@ The `k8s/` directory contains Kustomize manifests for:
 - EKS overlay with AWS Load Balancer Controller Ingress annotations
 - Local overlay for kind/minikube health checks
 
+The EKS overlay mirrors the no-domain validation posture: it creates an ALB Ingress without a host rule and uses HTTP at the ALB layer. If an EKS deployment later needs a custom domain, add an ACM certificate annotation, switch the listener to HTTPS, and add the Route53 record during that separate validation window.
+
 ## Architecture
 
 ```mermaid

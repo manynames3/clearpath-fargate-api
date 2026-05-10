@@ -19,10 +19,11 @@ Keep the live window focused on evidence, not extra build work:
 
 - Run and save the reviewed Terraform plan.
 - Apply once, then capture the Terraform summary and key outputs.
+- Record `terraform output -raw api_base_url`. The default validation path uses the generated CloudFront domain and does not require a purchased domain.
 - Confirm CloudFront sends the origin header and ALB listener rules require it.
 - Trigger GitHub Actions `Build and Deploy` manually with `deploy=true`.
 - Capture ECS service health, task health, ALB target health, RDS Proxy target health, CloudFront deployed status, and WAF attachment.
-- Run API smoke tests through the custom domain, including `/health`, `/ready`, `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett`.
+- Run API smoke tests through `api_base_url`, including `/health`, `/ready`, `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett`.
 - Capture CloudFront cache headers on the second market endpoint request.
 - Run `make deployment-evidence` to save read-only AWS CLI output.
 - Destroy the stack the same day and capture the destroy summary.
@@ -49,8 +50,8 @@ After apply, capture:
 - CloudFront distribution deployed
 - WAF WebACL attached to CloudFront
 - CloudWatch dashboard and alarms
-- API health response through the custom domain
-- API readiness response proving database connectivity through the custom domain
+- API health response through `api_base_url`
+- API readiness response proving database connectivity through `api_base_url`
 - GoHighLevel webhook test returning `{"status":"accepted"}` and creating a lead
 - protected `/api/leads` response using `X-Clearpath-API-Key`
 - `/api/market/gwinnett` response with cache headers

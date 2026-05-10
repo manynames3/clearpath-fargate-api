@@ -9,7 +9,6 @@ Architecture decision records are maintained in [decisions](decisions/README.md)
 ```mermaid
 sequenceDiagram
     participant Client as Client or GHL
-    participant R53 as Route53
     participant CF as CloudFront
     participant WAF as AWS WAF
     participant ALB as ALB
@@ -17,15 +16,13 @@ sequenceDiagram
     participant Proxy as RDS Proxy
     participant DB as RDS PostgreSQL
 
-    Client->>R53: api.clearpathpropertygroup.com
-    R53->>CF: Alias response
-    Client->>CF: HTTPS request
+    Client->>CF: HTTPS request to generated CloudFront domain
     CF->>WAF: Managed rule and rate-limit evaluation
     WAF->>CF: Allow
     alt /api/market/* cache hit
         CF-->>Client: Cached market snapshot
     else cache miss or dynamic endpoint
-        CF->>ALB: HTTPS to origin-api hostname
+        CF->>ALB: HTTP origin request from CloudFront prefix list
         ALB->>ECS: HTTP on port 8000 inside VPC
         ECS->>Proxy: IAM-auth PostgreSQL connection
         Proxy->>DB: Pooled database connection
@@ -38,7 +35,11 @@ sequenceDiagram
 
 ## Security Boundaries
 
-The ALB security group accepts HTTPS only from the AWS-managed CloudFront origin-facing prefix list. ECS accepts port 8000 only from the ALB security group. RDS Proxy accepts PostgreSQL only from ECS, and the database accepts PostgreSQL only from RDS Proxy.
+The default validation path uses CloudFront's generated `*.cloudfront.net` domain, so no Route53 hosted zone or purchased domain is required. Viewer TLS terminates at CloudFront. CloudFront reaches the ALB over HTTP because the ALB generated hostname cannot use a project-owned ACM certificate. The ALB security group still accepts traffic only from the AWS-managed CloudFront origin-facing prefix list, and the optional origin header rule can further reduce direct-origin access.
+
+Custom-domain mode is still supported by setting `use_custom_domain = true`, providing a real `route53_zone_id`, and using ACM/Route53 records for both the public API alias and ALB origin alias.
+
+ECS accepts port 8000 only from the ALB security group. RDS Proxy accepts PostgreSQL only from ECS, and the database accepts PostgreSQL only from RDS Proxy.
 
 Runtime credentials are fetched from Secrets Manager. Terraform creates the GHL webhook secret container without writing a secret value into state; load the value out-of-band before starting the service.
 
@@ -68,7 +69,7 @@ Security group rules mirror the same path:
 
 | Rule | Source | Destination | Port |
 |---|---|---|---|
-| ALB ingress | CloudFront origin-facing managed prefix list | ALB SG | `443` |
+| ALB ingress | CloudFront origin-facing managed prefix list | ALB SG | `80` default, `443` with custom-domain origin TLS |
 | App ingress | ALB SG | ECS SG | `8000` |
 | Proxy ingress | ECS SG | RDS Proxy SG | `5432` |
 | Database ingress | RDS Proxy SG | RDS SG | `5432` |

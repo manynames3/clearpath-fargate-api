@@ -188,6 +188,7 @@ resource "aws_lb" "main" {
   #checkov:skip=CKV_AWS_91:ALB access logs are omitted for low-cost ephemeral teardown; CloudFront and ECS logs cover the request path.
   #checkov:skip=CKV_AWS_150:Deletion protection is controlled by var.alb_deletion_protection; dev defaults disable it for teardown, production should enable it.
   #checkov:skip=CKV2_AWS_28:WAF is attached to CloudFront, and the ALB security group only accepts CloudFront origin-facing traffic.
+  #checkov:skip=CKV2_AWS_20:No-domain validation terminates HTTPS at CloudFront and allows HTTP only from CloudFront to the ALB generated DNS name.
   name                       = "${var.project}-alb-${var.env}"
   internal                   = false
   load_balancer_type         = "application"
@@ -269,6 +270,29 @@ resource "aws_lb_listener" "https" {
 
   tags = merge(local.common_tags, {
     Name = "${var.project}-${var.env}-https"
+  })
+}
+
+resource "aws_lb_listener" "http" {
+  #checkov:skip=CKV_AWS_2:No-domain validation terminates viewer TLS at CloudFront and uses HTTP only from the CloudFront origin-facing prefix list to the ALB generated DNS name.
+  #checkov:skip=CKV_AWS_103:No-domain validation cannot attach an ACM certificate to the ALB generated DNS name; custom-domain mode creates the TLS 1.2 HTTPS listener.
+  count = var.create_http_listener ? 1 : 0
+
+  load_balancer_arn = aws_lb.main.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "application/json"
+      message_body = "{\"detail\":\"not found\"}"
+      status_code  = "404"
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.env}-http"
   })
 }
 
@@ -365,6 +389,102 @@ resource "aws_lb_listener_rule" "api" {
 
   tags = merge(local.common_tags, {
     Name = "${var.project}-${var.env}-api"
+  })
+}
+
+resource "aws_lb_listener_rule" "http_health" {
+  count = var.create_http_listener ? 1 : 0
+
+  listener_arn = aws_lb_listener.http[0].arn
+  priority     = 10
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.api.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/health", "/ready"]
+    }
+  }
+
+  dynamic "condition" {
+    for_each = local.origin_header_conditions
+    content {
+      http_header {
+        http_header_name = var.origin_header_name
+        values           = [condition.value]
+      }
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.env}-http-health"
+  })
+}
+
+resource "aws_lb_listener_rule" "http_webhooks" {
+  count = var.create_http_listener ? 1 : 0
+
+  listener_arn = aws_lb_listener.http[0].arn
+  priority     = 20
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.webhooks.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/webhooks/*"]
+    }
+  }
+
+  dynamic "condition" {
+    for_each = local.origin_header_conditions
+    content {
+      http_header {
+        http_header_name = var.origin_header_name
+        values           = [condition.value]
+      }
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.env}-http-webhooks"
+  })
+}
+
+resource "aws_lb_listener_rule" "http_api" {
+  count = var.create_http_listener ? 1 : 0
+
+  listener_arn = aws_lb_listener.http[0].arn
+  priority     = 30
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.api.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/*"]
+    }
+  }
+
+  dynamic "condition" {
+    for_each = local.origin_header_conditions
+    content {
+      http_header {
+        http_header_name = var.origin_header_name
+        values           = [condition.value]
+      }
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.env}-http-api"
   })
 }
 

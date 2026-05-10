@@ -3,7 +3,7 @@
 [![Build and Deploy](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/build-push.yml/badge.svg)](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/build-push.yml)
 [![Terraform Validate](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/terraform-validate.yml/badge.svg)](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/terraform-validate.yml)
 
-Containerized REST API on ECS Fargate, RDS PostgreSQL, RDS Proxy, CloudFront, Route53, WAF, and Secrets Manager.
+Containerized REST API on ECS Fargate, RDS PostgreSQL, RDS Proxy, CloudFront, optional Route53, WAF, and Secrets Manager.
 
 This repository is built as a production-pattern AWS Terraform project for Clearpath Property Group's off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story. ECS Fargate is the primary AWS deployment path, with an optional Kubernetes/EKS manifest track in `k8s/`.
 
@@ -14,6 +14,8 @@ This repo is currently built and validated locally only. Do not run `terraform a
 ## Ephemeral Deployment Strategy
 
 This project is designed to be deployed briefly, documented, and destroyed. The architectural value is the Terraform implementation and service design, not leaving ECS, ALB, RDS, RDS Proxy, NAT, CloudFront, and WAF running at idle.
+
+The default AWS validation path does not require buying a domain. Terraform serves the API through CloudFront's generated `*.cloudfront.net` domain and keeps Route53/ACM custom-domain resources disabled unless `use_custom_domain = true` and a real hosted zone ID are provided.
 
 The main database tradeoff is cost-aware and workload-driven: RDS PostgreSQL is implemented because the current workload is modest and predictable, while Aurora is documented as the upgrade path for higher scale or availability requirements.
 
@@ -118,8 +120,8 @@ curl -X POST http://localhost:8000/webhooks/ghl \
 | RDS PostgreSQL | Lead, property, and follow-up data is relational and benefits from joins. DynamoDB is not the right primary shape for this workflow, and Aurora is more capacity than the current workload needs. |
 | RDS Proxy | Fargate tasks create database connections; the proxy pools and protects the database from connection pressure. |
 | CloudFront | Market snapshot responses are cacheable and should not hit Fargate or the database on every read. |
-| Route53 | Provides real API and origin DNS routing for the CloudFront and ALB path. |
-| ALB | Routes `/api/*`, `/webhooks/*`, and `/health` to ECS targets and terminates TLS at the regional origin. |
+| Route53 | Optional custom-domain layer. The default short validation run uses the generated CloudFront domain to avoid domain purchase and hosted-zone maintenance. |
+| ALB | Routes `/api/*`, `/webhooks/*`, and `/health` to ECS targets. In no-domain mode, viewer TLS terminates at CloudFront and CloudFront reaches the ALB over HTTP from the managed origin-facing prefix list. |
 | Secrets Manager | RDS-managed database credentials and webhook HMAC secrets stay out of code and Terraform variable values. |
 | WAF | AWS managed rules and webhook rate limiting protect the CloudFront edge. |
 | Kubernetes/EKS manifests | Included as an optional platform track for portable container operations. ECS remains the cost-controlled AWS deployment path. |
@@ -156,11 +158,9 @@ Aurora PostgreSQL becomes the next database option if webhook volume, concurrent
 
 ```mermaid
 flowchart LR
-    client["GHL / API client"] --> r53["Route53 api.clearpathpropertygroup.com"]
-    r53 --> cf["CloudFront"]
+    client["GHL / API client"] --> cf["CloudFront generated domain"]
     cf --> waf["AWS WAF WebACL"]
-    waf --> origin["origin-api.clearpathpropertygroup.com"]
-    origin --> alb["ALB HTTPS listener"]
+    waf --> alb["ALB listener restricted to CloudFront"]
     alb --> ecs["ECS Fargate clearpath-api"]
     ecs --> proxy["RDS Proxy"]
     proxy --> db["RDS PostgreSQL"]
@@ -183,7 +183,7 @@ Security group flow is intentionally narrow:
 
 | From | To | Port | Control |
 |---|---|---|---|
-| CloudFront origin-facing prefix list | ALB | `443` | ALB does not accept arbitrary internet sources |
+| CloudFront origin-facing prefix list | ALB | `80` default, `443` with custom-domain origin TLS | ALB does not accept arbitrary internet sources |
 | ALB security group | ECS security group | `8000` | App traffic only from the load balancer |
 | ECS security group | RDS Proxy security group | `5432` | Application connects through the proxy only |
 | RDS Proxy security group | RDS security group | `5432` | Database accepts PostgreSQL only from RDS Proxy |
@@ -221,7 +221,13 @@ terraform -chdir=terraform/environments/dev plan -out=tfplan
 terraform -chdir=terraform/environments/dev apply tfplan
 ```
 
-Do not skip the plan review. Set `route53_zone_id` in `terraform/environments/dev/terraform.tfvars` before applying DNS/ACM resources.
+Do not skip the plan review. Only set `route53_zone_id` in `terraform/environments/dev/terraform.tfvars` when intentionally enabling DNS/ACM custom-domain resources.
+
+For the default no-domain validation path, keep `use_custom_domain = false` and use the generated API output after apply:
+
+```bash
+terraform -chdir=terraform/environments/dev output -raw api_base_url
+```
 
 ## Deployment Validation Artifacts
 
@@ -229,13 +235,13 @@ When validating the stack in AWS, capture artifacts that show the build ran end 
 
 | Evidence | What to show |
 |---|---|
-| Terraform plan/apply | Reviewed plan, successful apply, and outputs for ALB, CloudFront, RDS Proxy, and domains |
+| Terraform plan/apply | Reviewed plan, successful apply, and outputs for ALB, CloudFront, RDS Proxy, and `api_base_url` |
 | Network | VPC, six subnets across two AZs, route tables, NAT gateway, VPC endpoints, and VPC Flow Logs |
 | Security groups | CloudFront to ALB, ALB to ECS, ECS to RDS Proxy, RDS Proxy to RDS |
 | ECS/Fargate | Cluster, service, two running tasks, task definition, and CloudWatch logs |
 | Database | RDS PostgreSQL private accessibility, encryption, Secrets Manager integration, and RDS Proxy healthy target |
-| Edge | CloudFront distribution deployed, WAF attached, custom domain behavior, and `/api/market/*` cache hit |
-| API | `/health`, `/ready`, `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett` responses through the deployed domain |
+| Edge | CloudFront distribution deployed, WAF attached, generated domain or optional custom-domain behavior, and `/api/market/*` cache hit |
+| API | `/health`, `/ready`, `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett` responses through `api_base_url` |
 | Teardown | ECS scaled down, Terraform destroy completed, and billable resources removed |
 
 After apply, collect read-only CLI evidence with:

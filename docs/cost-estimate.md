@@ -4,6 +4,8 @@ This stack is intended for a short validation run, not continuous idle hosting. 
 
 Pricing changes by region, date, architecture, traffic, and free-tier eligibility. Treat this as a planning guide and verify with the AWS Pricing Calculator before any real deployment. This estimate assumes `us-east-1`, low traffic, dev defaults, and a short 2-3 hour validation window.
 
+The default validation mode uses the generated CloudFront domain, so there is no domain registration cost and no Route53 hosted-zone maintenance cost. Route53/ACM custom-domain resources are optional and disabled unless `use_custom_domain = true`.
+
 ## Main Cost Drivers
 
 | Service | Why it costs money | Validation posture |

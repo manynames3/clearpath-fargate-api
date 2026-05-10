@@ -426,6 +426,20 @@ resource "aws_vpc_security_group_ingress_rule" "alb_from_cloudfront" {
   })
 }
 
+resource "aws_vpc_security_group_ingress_rule" "alb_http_from_cloudfront" {
+  #checkov:skip=CKV_AWS_260:No-domain validation uses HTTP only from the AWS-managed CloudFront origin-facing prefix list to the ALB generated DNS name.
+  security_group_id = aws_security_group.alb.id
+  description       = "HTTP from CloudFront only for no-domain validation"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
+  prefix_list_id    = data.aws_ec2_managed_prefix_list.cloudfront.id
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.env}-alb-http-from-cloudfront"
+  })
+}
+
 resource "aws_vpc_security_group_egress_rule" "alb_to_ecs" {
   security_group_id            = aws_security_group.alb.id
   description                  = "App port to ECS tasks only"

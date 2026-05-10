@@ -199,10 +199,12 @@ resource "aws_cloudfront_distribution" "api" {
   #checkov:skip=CKV_AWS_305:This is an API distribution, not a website; unknown root paths should flow to the API 404 handler.
   #checkov:skip=CKV_AWS_374:Origin failover is intentionally omitted because this environment runs one regional ALB origin.
   #checkov:skip=CKV_AWS_310:Origin group failover is intentionally omitted for the single-region architecture.
+  #checkov:skip=CKV_AWS_174:The default no-domain validation mode uses the AWS-managed CloudFront certificate; custom-domain mode uses TLSv1.2_2021 with ACM.
+  #checkov:skip=CKV2_AWS_42:The default no-domain validation mode intentionally uses the AWS-managed CloudFront certificate to avoid domain purchase; custom-domain mode uses ACM.
   enabled         = true
   is_ipv6_enabled = true
   comment         = "clearpath-api"
-  aliases         = [var.api_domain_name]
+  aliases         = var.use_custom_domain ? [var.api_domain_name] : []
   web_acl_id      = aws_wafv2_web_acl.api.arn
   price_class     = "PriceClass_100"
   http_version    = "http2and3"
@@ -222,7 +224,7 @@ resource "aws_cloudfront_distribution" "api" {
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "https-only"
+      origin_protocol_policy = var.origin_protocol
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
@@ -250,10 +252,20 @@ resource "aws_cloudfront_distribution" "api" {
     compress                   = true
   }
 
-  viewer_certificate {
-    acm_certificate_arn      = var.acm_cert_arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+  dynamic "viewer_certificate" {
+    for_each = var.use_custom_domain ? [1] : []
+    content {
+      acm_certificate_arn      = var.acm_cert_arn
+      ssl_support_method       = "sni-only"
+      minimum_protocol_version = "TLSv1.2_2021"
+    }
+  }
+
+  dynamic "viewer_certificate" {
+    for_each = var.use_custom_domain ? [] : [1]
+    content {
+      cloudfront_default_certificate = true
+    }
   }
 
   restrictions {

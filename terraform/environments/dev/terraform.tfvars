@@ -25,8 +25,9 @@ ecs_log_group_name      = "/ecs/clearpath-api"
 ecs_desired_count       = 2
 alb_deletion_protection = false
 
-api_domain_name    = "api.clearpathpropertygroup.com"
-origin_domain_name = "origin-api.clearpathpropertygroup.com"
+use_custom_domain  = false
+api_domain_name    = "api.example.com"
+origin_domain_name = "origin-api.example.com"
 
-# Empty keeps Route53 records out of local-only plans. Set to the hosted zone ID before applying.
+# Empty keeps Route53 and ACM custom-domain resources disabled.
 route53_zone_id = ""

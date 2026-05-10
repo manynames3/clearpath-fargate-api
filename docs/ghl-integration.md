@@ -9,10 +9,11 @@ For this project stage, use a GoHighLevel Workflow Custom Webhook action. It is 
 1. Create or edit a GHL workflow for new motivated-seller leads.
 2. Add a Custom Webhook action.
 3. Set method to `POST`.
-4. Set the URL to the deployed endpoint:
+4. Set the URL to the deployed endpoint. For the default no-domain validation path, read the base URL from Terraform:
 
-```text
-https://api.clearpathpropertygroup.com/webhooks/ghl
+```bash
+export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw api_base_url)"
+echo "$API_BASE_URL/webhooks/ghl"
 ```
 
 5. Send JSON with the mapped contact and property fields.

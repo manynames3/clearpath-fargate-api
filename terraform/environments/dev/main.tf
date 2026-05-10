@@ -4,6 +4,10 @@ locals {
     Environment = var.env
     ManagedBy   = "terraform"
   }
+
+  custom_domain_enabled         = var.use_custom_domain && var.route53_zone_id != ""
+  cloudfront_origin_domain_name = local.custom_domain_enabled ? var.origin_domain_name : module.ecs.alb_dns_name
+  cloudfront_origin_protocol    = local.custom_domain_enabled ? "https-only" : "http-only"
 }
 
 provider "aws" {
@@ -48,7 +52,7 @@ module "dns_certificate" {
   api_domain_name      = var.api_domain_name
   origin_domain_name   = var.origin_domain_name
   route53_zone_id      = var.route53_zone_id
-  create_certificate   = true
+  create_certificate   = local.custom_domain_enabled
   create_api_record    = false
   create_origin_record = false
 }
@@ -110,8 +114,9 @@ module "ecs" {
   rds_proxy_endpoint      = module.rds.rds_proxy_endpoint
   ghl_webhook_secret_arn  = module.iam.ghl_webhook_secret_arn
   api_key_secret_arn      = module.iam.api_key_secret_arn
-  acm_cert_arn            = module.dns_certificate.certificate_arn
-  create_https_listener   = true
+  acm_cert_arn            = local.custom_domain_enabled ? module.dns_certificate.certificate_arn : ""
+  create_https_listener   = local.custom_domain_enabled
+  create_http_listener    = !local.custom_domain_enabled
   desired_count           = var.ecs_desired_count
   alb_deletion_protection = var.alb_deletion_protection
   origin_header_name      = var.origin_header_name
@@ -128,8 +133,10 @@ module "cloudfront" {
   project             = var.project
   env                 = var.env
   api_domain_name     = var.api_domain_name
-  origin_domain_name  = var.origin_domain_name
-  acm_cert_arn        = module.dns_certificate.certificate_arn
+  origin_domain_name  = local.cloudfront_origin_domain_name
+  origin_protocol     = local.cloudfront_origin_protocol
+  use_custom_domain   = local.custom_domain_enabled
+  acm_cert_arn        = local.custom_domain_enabled ? module.dns_certificate.certificate_arn : ""
   origin_header_name  = var.origin_header_name
   origin_header_value = var.origin_header_value
 }
@@ -147,8 +154,8 @@ module "dns_records" {
   origin_domain_name        = var.origin_domain_name
   route53_zone_id           = var.route53_zone_id
   create_certificate        = false
-  create_api_record         = true
-  create_origin_record      = true
+  create_api_record         = local.custom_domain_enabled
+  create_origin_record      = local.custom_domain_enabled
   cloudfront_domain_name    = module.cloudfront.distribution_domain_name
   cloudfront_hosted_zone_id = module.cloudfront.distribution_hosted_zone_id
   alb_dns_name              = module.ecs.alb_dns_name

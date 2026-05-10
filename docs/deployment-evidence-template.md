@@ -13,6 +13,11 @@ Use this file as the capture checklist for a short-lived AWS validation run. Rep
 - Terraform destroy summary:
 - Total validation window:
 - Estimated validation cost:
+- API base URL from Terraform:
+
+```bash
+export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw api_base_url)"
+```
 
 ## Architecture Evidence
 
@@ -31,14 +36,14 @@ Use this file as the capture checklist for a short-lived AWS validation run. Rep
 | ALB target health | `docs/screenshots/alb-target-health.png` | Targets healthy on `/health`. |
 | RDS PostgreSQL | `docs/screenshots/rds-instance.png` | Private database, encrypted storage, IAM auth enabled. |
 | RDS Proxy | `docs/screenshots/rds-proxy-targets.png` | Proxy target registered and available. |
-| CloudFront | `docs/screenshots/cloudfront-distribution.png` | Distribution deployed with API aliases. |
+| CloudFront | `docs/screenshots/cloudfront-distribution.png` | Distribution deployed with generated domain, or API aliases if custom-domain mode is enabled. |
 | WAF | `docs/screenshots/waf-web-acl.png` | WebACL attached to CloudFront. |
 | CloudWatch | `docs/screenshots/cloudwatch-dashboard.png` | ECS, ALB, CloudFront, and RDS widgets visible. |
 
 ## API Evidence
 
 ```bash
-curl -f https://api.clearpathpropertygroup.com/health
+curl -f "$API_BASE_URL/health"
 ```
 
 Expected:
@@ -48,7 +53,7 @@ Expected:
 ```
 
 ```bash
-curl -f https://api.clearpathpropertygroup.com/ready
+curl -f "$API_BASE_URL/ready"
 ```
 
 Expected:
@@ -58,7 +63,7 @@ Expected:
 ```
 
 ```bash
-curl -X POST https://api.clearpathpropertygroup.com/webhooks/ghl \
+curl -X POST "$API_BASE_URL/webhooks/ghl" \
   -H "Content-Type: application/json" \
   -H "X-Clearpath-Webhook-Secret: <redacted>" \
   -d '{"id":"validation-ghl-001","firstName":"Validation","lastName":"Lead","status":"warm","customFields":[{"key":"county","field_value":"Gwinnett"},{"key":"property_address","field_value":"25 Validation Ridge"}]}'
@@ -71,14 +76,14 @@ Expected:
 ```
 
 ```bash
-curl -f "https://api.clearpathpropertygroup.com/api/leads?county=Gwinnett&status=warm" \
+curl -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" \
   -H "X-Clearpath-API-Key: <redacted>"
 ```
 
 Expected: the webhook lead appears with property data.
 
 ```bash
-curl -i https://api.clearpathpropertygroup.com/api/market/gwinnett
+curl -i "$API_BASE_URL/api/market/gwinnett"
 ```
 
 Expected headers:

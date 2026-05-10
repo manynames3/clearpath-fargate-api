@@ -100,6 +100,12 @@ variable "create_https_listener" {
   default     = true
 }
 
+variable "create_http_listener" {
+  description = "Whether to create the ALB HTTP listener and listener rules. Used for short no-domain CloudFront validation."
+  type        = bool
+  default     = false
+}
+
 variable "desired_count" {
   description = "Desired ECS task count."
   type        = number

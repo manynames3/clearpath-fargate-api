@@ -134,18 +134,24 @@ variable "alb_deletion_protection" {
   type        = bool
 }
 
+variable "use_custom_domain" {
+  description = "Whether to create ACM/Route53 custom-domain resources. Keep false for short validation runs that use the generated CloudFront domain."
+  type        = bool
+  default     = false
+}
+
 variable "api_domain_name" {
-  description = "Public API domain name served by CloudFront."
+  description = "Optional public API domain name served by CloudFront when use_custom_domain is true."
   type        = string
 }
 
 variable "origin_domain_name" {
-  description = "Origin domain name that aliases to the ALB."
+  description = "Optional origin domain name that aliases to the ALB when use_custom_domain is true."
   type        = string
 }
 
 variable "route53_zone_id" {
-  description = "Route53 hosted zone ID. Empty skips DNS records for local-only validation."
+  description = "Route53 hosted zone ID. Empty keeps custom-domain DNS/ACM disabled."
   type        = string
   default     = ""
 }

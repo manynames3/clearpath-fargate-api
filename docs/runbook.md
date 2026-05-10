@@ -12,8 +12,8 @@ terraform -chdir=terraform/environments/dev validate
 ## Before Apply
 
 1. Run `make preflight` from the repository root.
-2. Set `route53_zone_id` in `terraform/environments/dev/terraform.tfvars` if DNS/ACM should be created.
-3. Review `api_domain_name` and `origin_domain_name`.
+2. Keep `use_custom_domain = false` for the default no-domain validation path.
+3. Only set `use_custom_domain = true`, `route53_zone_id`, `api_domain_name`, and `origin_domain_name` if you own a domain and intentionally want Route53/ACM resources.
 4. Set `TF_VAR_origin_header_value` to a one-time high-entropy value for CloudFront-to-ALB origin protection.
 5. Run `terraform plan -out=tfplan` from `terraform/environments/dev`.
 6. Review the full plan output before applying.
@@ -30,6 +30,12 @@ This value is used by CloudFront and ALB listener rules to reduce direct-origin 
 
 ## After Apply
 
+Read the deployed base URL from Terraform. In the default no-domain mode this is the generated CloudFront domain:
+
+```bash
+export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw api_base_url)"
+```
+
 Load runtime secret values without putting them in Terraform:
 
 ```bash
@@ -45,7 +51,7 @@ aws secretsmanager put-secret-value \
 Configure the GoHighLevel Workflow Custom Webhook to send `POST` requests to:
 
 ```text
-https://api.clearpathpropertygroup.com/webhooks/ghl
+$API_BASE_URL/webhooks/ghl
 ```
 
 Use [ghl-integration.md](ghl-integration.md) for the expected payload fields and shared secret header.
@@ -65,10 +71,10 @@ The deploy workflow is manual-gated. It only pushes an image and forces a new EC
 ## Health Checks
 
 ```bash
-curl -f https://api.clearpathpropertygroup.com/health
-curl -f https://api.clearpathpropertygroup.com/ready
-curl -I https://api.clearpathpropertygroup.com/api/market/gwinnett
-curl -f "https://api.clearpathpropertygroup.com/api/leads?county=Gwinnett&status=warm" \
+curl -f "$API_BASE_URL/health"
+curl -f "$API_BASE_URL/ready"
+curl -I "$API_BASE_URL/api/market/gwinnett"
+curl -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" \
   -H "X-Clearpath-API-Key: <redacted>"
 ```
 
