@@ -23,9 +23,24 @@ A short-lived AWS validation run was completed on 2026-05-10 and torn down after
 - CloudWatch metrics and alarms were visible during the run
 - VPC resource map showed public, private ECS, and private database subnet tiers
 
-Raw AWS console screenshots are intentionally kept out of Git because they contain account metadata, ARNs, generated endpoints, and secret ARNs. Public screenshots should be redacted before publication. See [docs/live-validation-summary.md](docs/live-validation-summary.md) for the evidence summary and teardown notes.
+Curated screenshots from the validation run are included below. They are cropped/redacted for public use; raw AWS console screenshots are intentionally kept out of Git because they contain account metadata, ARNs, generated endpoints, private network identifiers, and secret ARNs. See [docs/live-validation-summary.md](docs/live-validation-summary.md) for the evidence summary and teardown notes.
 
 The GoHighLevel work is accurately scoped as a GHL-compatible webhook receiver. A live external GHL Workflow Custom Webhook still requires account/location access, workflow configuration, shared secret setup, and delivery-log evidence.
+
+## AWS Evidence Gallery
+
+| Evidence | Screenshot |
+|---|---|
+| CloudFront served the deployed `/health` endpoint | <img src="docs/screenshots/live-validation/01-cloudfront-health-response.png" alt="CloudFront health response" width="420"> |
+| ECS Fargate service reached two healthy running tasks | <img src="docs/screenshots/live-validation/03-ecs-service-healthy-tasks.png" alt="ECS service healthy tasks" width="520"> |
+| ALB API target group reported healthy targets | <img src="docs/screenshots/live-validation/07-api-target-group-healthy.png" alt="API target group healthy" width="520"> |
+| ALB webhook target group reported healthy targets | <img src="docs/screenshots/live-validation/08-webhook-target-group-healthy.png" alt="Webhook target group healthy" width="520"> |
+| RDS Proxy target group was attached to PostgreSQL | <img src="docs/screenshots/live-validation/13-rds-proxy-target-group.png" alt="RDS Proxy target group" width="520"> |
+| VPC resource map showed public, ECS, and database subnet tiers | <img src="docs/screenshots/live-validation/14-vpc-resource-map.png" alt="VPC resource map" width="520"> |
+| CloudFront had WAF enabled | <img src="docs/screenshots/live-validation/09-cloudfront-waf-attached.png" alt="CloudFront WAF attached" width="520"> |
+| CloudWatch alarms and metrics were visible during validation | <img src="docs/screenshots/live-validation/15-cloudwatch-alarms-ok.png" alt="CloudWatch alarms" width="520"> |
+
+The full public-safe screenshot set is listed in [docs/screenshots/live-validation](docs/screenshots/live-validation/README.md).
 
 ## Ephemeral Deployment Strategy
 
@@ -48,6 +63,7 @@ During an intentional AWS validation run, capture the operational artifacts, the
 
 See [docs/deployment-validation.md](docs/deployment-validation.md) for the short-lived deployment checklist.
 Use [docs/deployment-evidence-template.md](docs/deployment-evidence-template.md) when capturing screenshots and command output.
+Use [docs/troubleshooting.md](docs/troubleshooting.md) for validation troubleshooting notes.
 Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel-ready webhook receiver, setup requirements, and payload mapping.

@@ -19,7 +19,7 @@ The validation proved the AWS deployment path for the API:
 
 ## Evidence Handling
 
-Raw screenshots from the validation run are kept locally under the ignored `docs/evidence/` path because they contain AWS account metadata, ARNs, generated endpoints, and secret ARNs. Do not commit raw AWS console screenshots without redaction.
+Public-safe screenshot crops from the validation run are committed under [screenshots/live-validation](screenshots/live-validation/README.md). Raw screenshots from the validation run are kept locally under the ignored `docs/evidence/` path because they contain AWS account metadata, ARNs, generated endpoints, private network identifiers, and secret ARNs. Do not commit raw AWS console screenshots without redaction.
 
 For public documentation, redact:
 
@@ -37,6 +37,16 @@ Keep visible:
 - target health
 - WAF attachment
 - CloudWatch graphs and alarm states
+
+## Validation Notes
+
+The live validation surfaced normal first-run issues that were resolved during the paid window:
+
+- new AWS Free Tier plan restrictions blocked RDS Proxy until the account was upgraded to a paid plan
+- initial ECS tasks failed health checks during early revisions, then stabilized after the image/startup path was corrected and the service reached two healthy tasks
+- KMS console visibility warnings were reviewed without publishing key policy details or full key ARNs
+
+These notes are included because they show the deployment was exercised like a real infrastructure rollout, not only planned locally.
 
 ## Teardown Result
 
