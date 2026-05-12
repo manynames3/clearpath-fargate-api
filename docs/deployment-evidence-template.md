@@ -39,6 +39,8 @@ export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw a
 | CloudFront | `docs/screenshots/cloudfront-distribution.png` | Distribution deployed with generated domain, or API aliases if custom-domain mode is enabled. |
 | WAF | `docs/screenshots/waf-web-acl.png` | WebACL attached to CloudFront. |
 | CloudWatch | `docs/screenshots/cloudwatch-dashboard.png` | ECS, ALB, CloudFront, and RDS widgets visible. |
+| Optional GHL workflow | `docs/screenshots/ghl-workflow-clearpath-webhook.png` | Existing paid-lead workflow with Clearpath Custom Webhook action added; hide secrets. |
+| Optional GHL delivery log | `docs/screenshots/ghl-delivery-200.png` | Workflow execution/delivery log showing `200` from Clearpath API. |
 
 ## API Evidence
 
@@ -66,7 +68,7 @@ Expected:
 curl -X POST "$API_BASE_URL/webhooks/ghl" \
   -H "Content-Type: application/json" \
   -H "X-Clearpath-Webhook-Secret: <redacted>" \
-  -d '{"id":"validation-ghl-001","firstName":"Validation","lastName":"Lead","status":"warm","customFields":[{"key":"county","field_value":"Gwinnett"},{"key":"property_address","field_value":"25 Validation Ridge"}]}'
+  -d '{"id":"validation-ghl-001","firstName":"Validation","lastName":"Lead","source":"paid-lead-vendor-a","status":"warm","customFields":[{"key":"county","field_value":"Gwinnett"},{"key":"property_address","field_value":"25 Validation Ridge"},{"key":"situation","field_value":"vacant"}]}'
 ```
 
 Expected:
@@ -75,7 +77,7 @@ Expected:
 {"status":"accepted","lead_id":"<uuid>"}
 ```
 
-This proves the deployed receiver accepts a GHL-style payload. To prove the external GoHighLevel integration, also capture the GHL Workflow Custom Webhook delivery log from the GHL account/location used for validation.
+This proves the deployed receiver accepts a GHL-style payload. To prove the external GoHighLevel integration, also capture the GHL Workflow Custom Webhook delivery log from the paid-lead intake workflow used for validation. GHL should still own follow-up sequences, notifications, and Notion handoff; the Clearpath webhook is only the reporting/source-accountability copy.
 
 ```bash
 curl -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" \
@@ -83,6 +85,8 @@ curl -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" \
 ```
 
 Expected: the webhook lead appears with property data.
+
+If a live GHL workflow is connected, expected: the lead source/vendor, county, property address, and situation match the GHL delivery payload.
 
 ```bash
 curl -i "$API_BASE_URL/api/market/gwinnett"
@@ -139,6 +143,7 @@ aws cloudfront list-distributions \
 
 - RDS was selected for the implemented build because current volume is modest and predictable.
 - RDS Proxy remains valuable because ECS/Fargate tasks can create many short-lived database connections.
+- GHL remains the CRM automation layer. This API is the reporting and source-accountability layer for paid leads.
 - RDS Multi-AZ is the first production availability upgrade.
 - Aurora PostgreSQL is the future option when read scaling, stricter failover, or more dynamic capacity scaling is justified.
 - The stack is intentionally teardown-first to avoid idle ECS, ALB, NAT, RDS, RDS Proxy, CloudFront, and WAF cost.

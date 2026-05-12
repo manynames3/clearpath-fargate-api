@@ -2,35 +2,58 @@
 
 Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: a configured GHL workflow can send lead/contact data to this API, and the API upserts the lead plus property details into PostgreSQL. The app does not call the GHL API yet.
 
+## Where This Fits
+
+Clearpath's current operating workflow is:
+
+```text
+Paid lead provider -> GoHighLevel CRM -> GHL workflows -> Notion / notifications / follow-up sequences
+```
+
+This API is an additional workflow action, not a replacement for GHL. GHL continues to own CRM pipelines, automatic follow-up sequences, notifications, and the Notion handoff. Clearpath Lead Intelligence API receives a copy of the lead event so the business has an independent reporting store for paid-lead source accountability, county/situation analysis, and market context.
+
+The best live proof is a paid-lead-style event already entering GHL, followed by a GHL Workflow Custom Webhook delivery to this API with a `200` response.
+
 ## Current Status
 
 The repository includes the receiving endpoint, payload mapping, shared-secret validation, local tests, and AWS infrastructure needed to accept GHL-style webhook payloads. A live GoHighLevel workflow has not been connected or captured as evidence yet.
 
-To prove the external integration, configure a GHL Workflow Custom Webhook during a future validation window, send a real workflow event to the deployed CloudFront URL, and capture the GHL delivery log plus the resulting lead query from this API.
+To prove the external integration, configure a GHL Workflow Custom Webhook during a future validation window, send a real lead-intake workflow event to the deployed CloudFront URL, and capture the GHL delivery log plus the resulting lead query from this API.
 
 ## Recommended Setup
 
 For this project stage, use a GoHighLevel Workflow Custom Webhook action. It is the simplest fit because Clearpath only needs outbound contact data from GHL into the API.
 
 1. Confirm access to the correct GHL account/location.
-2. Create or edit a GHL workflow for new motivated-seller leads.
-3. Add a Custom Webhook action.
-4. Set method to `POST`.
-5. Set the URL to the deployed endpoint. For the default no-domain validation path, read the base URL from Terraform:
+2. Create or edit the GHL workflow that already runs after a paid lead provider creates a contact.
+3. Keep the existing GHL actions for notifications, follow-up sequences, and Notion.
+4. Add a second Custom Webhook action that sends the same lead event to Clearpath API.
+5. Set method to `POST`.
+6. Set the URL to the deployed endpoint. For the default no-domain validation path, read the base URL from Terraform:
 
 ```bash
 export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw api_base_url)"
 echo "$API_BASE_URL/webhooks/ghl"
 ```
 
-6. Send JSON with the mapped contact and property fields.
-7. Add a shared secret header if enabled:
+7. Send JSON with the mapped contact, source, and property fields.
+8. Add a shared secret header if enabled:
 
 ```text
 X-Clearpath-Webhook-Secret: <secret value from Secrets Manager>
 ```
 
 GHL custom workflow webhooks can send mapped values from contact fields, custom fields, and workflow context. The official HighLevel custom webhook support article is useful for configuring the workflow action: https://help.gohighlevel.com/support/solutions/articles/155000003305/
+
+## Trigger Event
+
+Use the same trigger that represents the real paid lead path in the GHL account. Good options:
+
+- `Contact Created` when the paid lead provider creates a new contact in GHL.
+- The existing provider-specific workflow trigger, if the account already separates leads by source, tag, pipeline, or campaign.
+- `Form Submitted` only if the validation lead is being entered through a GHL form rather than a paid lead provider webhook.
+
+For portfolio evidence, the strongest event is a paid-lead-style test contact from the real intake path, with source/vendor fields visible enough to show why the reporting layer exists. Avoid presenting this as another follow-up workflow; the API is for analytics and source accountability.
 
 ## Payload Contract
 
@@ -43,7 +66,7 @@ The API accepts the local sample shape:
   "last_name": "Carter",
   "phone": "+14045550199",
   "email": "jordan@example.com",
-  "source": "sms",
+  "source": "paid-lead-vendor-a",
   "status": "warm",
   "custom_fields": {
     "property_address": "25 Sample Ridge",
@@ -64,7 +87,7 @@ It also accepts HighLevel-style field names commonly seen in webhook payloads:
   "lastName": "Carter",
   "phone": "+14045550199",
   "email": "jordan@example.com",
-  "source": "facebook",
+  "source": "paid-lead-vendor-a",
   "status": "warm",
   "customFields": [
     { "key": "property_address", "field_value": "25 Sample Ridge" },
@@ -85,7 +108,7 @@ Field mapping:
 | `last_name` or `lastName` | `leads.last_name` |
 | `phone` | `leads.phone` |
 | `email` | `leads.email` |
-| `source` | `leads.source` |
+| `source` | `leads.source`, normally the paid lead vendor, campaign, or channel |
 | `status` | `leads.status` |
 | `custom_fields.county` or `customFields[].key=county` | `leads.county`, `properties.county` |
 | `custom_fields.property_address` or `customFields[].key=property_address` | `properties.address` |
@@ -123,7 +146,7 @@ curl -X POST http://localhost:8000/webhooks/ghl \
     "firstName": "Jordan",
     "lastName": "Carter",
     "phone": "+14045550199",
-    "source": "sms",
+    "source": "paid-lead-vendor-a",
     "status": "warm",
     "customFields": [
       { "key": "property_address", "field_value": "25 Sample Ridge" },
@@ -141,6 +164,16 @@ curl -f "http://localhost:8000/api/leads?county=Gwinnett&status=warm"
 ```
 
 In the deployed environment, lead queries are protected. Include `X-Clearpath-API-Key` with the value stored in the `clearpath/dev/api-key` Secrets Manager secret.
+
+## Evidence To Capture Later
+
+During a short paid AWS/GHL validation window, capture:
+
+- GHL workflow overview showing the existing CRM/Notion actions plus the Clearpath Custom Webhook action.
+- Custom Webhook action showing `POST` to `$API_BASE_URL/webhooks/ghl`; hide the secret header value.
+- Workflow execution or delivery log showing the Clearpath webhook returned `200`.
+- Protected `/api/leads` query showing the same GHL contact/source/property data stored in PostgreSQL.
+- Optional Notion screenshot showing the existing workflow still receives the lead, proving the API is additive rather than a replacement.
 
 ## Later GHL API Work
 

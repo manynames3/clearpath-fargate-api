@@ -6,7 +6,7 @@ Status: Accepted
 
 ## Context
 
-The API stores leads, properties, follow-ups, and market snapshots. The access pattern is relational: lead queries join contact data, property details, and last follow-up state. Market snapshot reads are cacheable through CloudFront.
+The API stores paid leads, property details, source metadata, and market snapshots. The access pattern is relational: reporting queries join contact data, property details, source/vendor fields, and market context. Market snapshot reads are cacheable through CloudFront.
 
 The main alternatives considered were DynamoDB and Aurora PostgreSQL.
 
@@ -20,7 +20,7 @@ PostgreSQL is a good fit for the data model because the application benefits fro
 
 DynamoDB is not the right primary datastore for this workflow because the core queries are relational and would require denormalization or multiple query-specific item shapes.
 
-Aurora PostgreSQL remains a reasonable future option, but it is more capacity and operational surface than the current workload needs. The expected volume is modest: webhook writes, lead searches, and cached market snapshot reads. RDS keeps cost and sizing predictable while preserving the relational design.
+Aurora PostgreSQL remains a reasonable future option, but it is more capacity and operational surface than the current workload needs. The expected volume is modest: webhook writes, lead/source reporting queries, and cached market snapshot reads. RDS keeps cost and sizing predictable while preserving the relational design.
 
 ## Consequences
 

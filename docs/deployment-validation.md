@@ -32,7 +32,7 @@ Keep the live window focused on evidence, not extra build work:
 - Trigger GitHub Actions `Build and Deploy` manually with `deploy=true`.
 - Capture ECS service health, task health, ALB target health, RDS Proxy target health, CloudFront deployed status, and WAF attachment.
 - Run API smoke tests through `api_base_url`, including `/health`, `/ready`, a GHL-style test payload to `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett`.
-- If a real GoHighLevel account is available, configure the GHL Workflow Custom Webhook and capture the workflow delivery log. Otherwise, document the endpoint as GHL-ready but not externally connected.
+- If a real GoHighLevel account is available, add the Clearpath Custom Webhook action to the existing paid-lead intake workflow and capture the workflow delivery log. Otherwise, document the endpoint as GHL-ready but not externally connected.
 - Capture CloudFront cache headers on the second market endpoint request.
 - Run `make deployment-evidence` to save read-only AWS CLI output.
 - Destroy the stack the same day and capture the destroy summary.
@@ -62,11 +62,25 @@ After apply, capture:
 - API health response through `api_base_url`
 - API readiness response proving database connectivity through `api_base_url`
 - GHL-style webhook receiver test returning `{"status":"accepted"}` and creating a lead
-- optional real GoHighLevel workflow delivery log, if a GHL account/location was connected during the validation window
+- optional real GoHighLevel workflow delivery log from the paid-lead intake workflow, if a GHL account/location was connected during the validation window
 - protected `/api/leads` response using `X-Clearpath-API-Key`
 - `/api/market/gwinnett` response with cache headers
 
 Use [deployment-evidence-template.md](deployment-evidence-template.md) as the screenshot and command-output checklist. Store screenshots in `docs/screenshots/`.
+
+## GoHighLevel Validation Plan
+
+Do this only if the GHL account/location is available during the paid AWS window. The purpose is to prove the API receives a copy of the real lead-intake event for reporting; it is not meant to replace GHL's CRM automation.
+
+1. Use the existing paid lead provider intake workflow when possible. If that workflow cannot be safely edited, clone it or create a temporary validation workflow triggered by a test contact/tag.
+2. Leave existing GHL actions in place: notifications, follow-up sequences, pipeline movement, and Notion handoff.
+3. Add a Custom Webhook action that posts to `$API_BASE_URL/webhooks/ghl`.
+4. Include `X-Clearpath-Webhook-Secret` with the secret value loaded into Secrets Manager; do not expose the value in screenshots.
+5. Send mapped contact, source/vendor, and property fields.
+6. Trigger one paid-lead-style validation contact.
+7. Capture the GHL workflow execution/delivery log showing a `200` response from Clearpath API.
+8. Query `/api/leads` with `X-Clearpath-API-Key` and capture the stored lead/source/property data.
+9. Disable or remove the temporary webhook action before teardown if it points to the generated CloudFront URL.
 
 Collect read-only AWS CLI output into `docs/evidence/<timestamp>/`:
 

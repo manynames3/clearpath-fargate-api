@@ -49,7 +49,9 @@ aws secretsmanager put-secret-value \
   --secret-string "$CLEARPATH_API_KEY"
 ```
 
-Configure the GoHighLevel Workflow Custom Webhook to send `POST` requests to:
+If validating the external GHL path, add a GoHighLevel Workflow Custom Webhook action to the existing paid-lead intake workflow. Leave existing GHL notifications, follow-up sequences, pipeline actions, and Notion handoff in place; the Clearpath webhook is the reporting/source-accountability copy.
+
+Configure the Custom Webhook to send `POST` requests to:
 
 ```text
 $API_BASE_URL/webhooks/ghl

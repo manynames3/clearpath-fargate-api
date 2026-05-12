@@ -72,11 +72,12 @@ The deployed API proved the GHL-style receiver path, not a live external GoHighL
 Remaining work to prove live GHL integration:
 
 1. Get access to the target GHL account/location.
-2. Create or edit the motivated-seller workflow.
-3. Add a Custom Webhook action that posts to the deployed `api_base_url`.
-4. Add the shared webhook secret header.
-5. Send a real workflow event.
-6. Capture the GHL delivery log.
-7. Query `/api/leads` with the API key and capture the created lead.
+2. Use the existing paid-lead intake workflow, or a temporary clone/test workflow if the production workflow should not be edited.
+3. Keep the existing CRM actions for notifications, follow-up sequences, pipeline movement, and Notion.
+4. Add a Clearpath Custom Webhook action that posts to the deployed `api_base_url`.
+5. Add the shared webhook secret header.
+6. Send one paid-lead-style workflow event.
+7. Capture the GHL delivery log showing `200`.
+8. Query `/api/leads` with the API key and capture the created lead/source/property data.
 
-Until that is completed, describe the feature as a GoHighLevel-compatible webhook receiver rather than a fully verified live GHL integration.
+Until that is completed, describe the feature as a GoHighLevel-compatible lead intelligence receiver rather than a fully verified live GHL integration.

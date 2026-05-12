@@ -5,7 +5,15 @@
 
 Containerized REST API on ECS Fargate, RDS PostgreSQL, RDS Proxy, CloudFront, optional Route53, WAF, and Secrets Manager.
 
-This repository is built as a production-pattern AWS Terraform project for Clearpath Property Group's off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story. ECS Fargate is the primary AWS deployment path, with an optional Kubernetes/EKS manifest track in `k8s/`.
+This repository is built as a production-pattern AWS Terraform project for Clearpath Property Group's paid off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story. ECS Fargate is the primary AWS deployment path, with an optional Kubernetes/EKS manifest track in `k8s/`.
+
+## Business Fit
+
+Clearpath already uses GoHighLevel as the CRM. Paid lead providers send seller contact and property information into GHL, and GHL remains responsible for sales pipelines, automatic follow-up sequences, notifications, and Notion handoff workflows.
+
+This API does not replace that CRM workflow. It receives a copy of the GHL workflow event and creates an independent, queryable lead intelligence layer in PostgreSQL. The practical end-user value is source accountability and lead analysis: which paid lead sources, counties, and seller situations are worth buying again, whether each purchased lead was captured once, and what county-level market context should be shown with the lead.
+
+In short: GHL runs the sales workflow; Clearpath Lead Intelligence API owns the structured reporting and market-context layer.
 
 ## Deployment Status
 
@@ -25,7 +33,7 @@ A short-lived AWS validation run was completed on 2026-05-10 and torn down after
 
 Curated screenshots from the validation run are included below. They are cropped/redacted for public use; raw AWS console screenshots are intentionally kept out of Git because they contain account metadata, ARNs, generated endpoints, private network identifiers, and secret ARNs. See [docs/live-validation-summary.md](docs/live-validation-summary.md) for the evidence summary and teardown notes.
 
-The GoHighLevel work is accurately scoped as a GHL-compatible webhook receiver. A live external GHL Workflow Custom Webhook still requires account/location access, workflow configuration, shared secret setup, and delivery-log evidence.
+The GoHighLevel work is accurately scoped as a GHL-compatible webhook receiver for lead intelligence, not a replacement for GHL follow-up automation. A live external GHL Workflow Custom Webhook still requires account/location access, workflow configuration, shared secret setup, and delivery-log evidence.
 
 ## AWS Evidence Gallery
 
@@ -133,7 +141,7 @@ curl -X POST http://localhost:8000/webhooks/ghl \
     "first_name": "Jordan",
     "last_name": "Carter",
     "phone": "+14045550199",
-    "source": "sms",
+    "source": "paid-lead-vendor-a",
     "status": "warm",
     "custom_fields": {
       "property_address": "25 Sample Ridge",
@@ -150,7 +158,7 @@ curl -X POST http://localhost:8000/webhooks/ghl \
 | Service | Why not the alternative |
 |---|---|
 | ECS Fargate | GHL webhooks need warm, predictable responses. Lambda in a VPC can introduce cold-start latency, and future scoring jobs may exceed Lambda's runtime model. |
-| RDS PostgreSQL | Lead, property, and follow-up data is relational and benefits from joins. DynamoDB is not the right primary shape for this workflow, and Aurora is more capacity than the current workload needs. |
+| RDS PostgreSQL | Paid lead, property, source, and market data is relational and benefits from joins. DynamoDB is not the right primary shape for this reporting workflow, and Aurora is more capacity than the current workload needs. |
 | RDS Proxy | Fargate tasks create database connections; the proxy pools and protects the database from connection pressure. |
 | CloudFront | Market snapshot responses are cacheable and should not hit Fargate or the database on every read. |
 | Route53 | Optional custom-domain layer. The default short validation run uses the generated CloudFront domain to avoid domain purchase and hosted-zone maintenance. |
@@ -192,7 +200,9 @@ Aurora PostgreSQL becomes the next database option if webhook volume, concurrent
 
 ```mermaid
 flowchart LR
-    client["GHL workflow or API client"] --> cf["CloudFront generated domain"]
+    provider["Paid lead provider"] --> ghl["GoHighLevel CRM"]
+    ghl --> notion["Existing Notion workflow"]
+    ghl --> cf["CloudFront generated domain"]
     cf --> waf["AWS WAF WebACL"]
     waf --> alb["ALB listener restricted to CloudFront"]
     alb --> ecs["ECS Fargate clearpath-api"]
@@ -226,7 +236,7 @@ Security group flow is intentionally narrow:
 ## Endpoints
 
 - `POST /webhooks/ghl` - GoHighLevel-compatible contact webhook ingestion
-- `GET /api/leads?county=Gwinnett&status=warm&days_since_contact=30` - protected with `X-Clearpath-API-Key` when configured
+- `GET /api/leads?county=Gwinnett&status=warm&days_since_contact=30` - protected reporting query with `X-Clearpath-API-Key` when configured
 - `GET /api/market/gwinnett`
 - `GET /health`
 - `GET /ready` - database readiness check

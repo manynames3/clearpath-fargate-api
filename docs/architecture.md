@@ -1,14 +1,30 @@
 # Architecture
 
-Clearpath Lead Intelligence API exposes a GoHighLevel-compatible webhook receiver, stores lead/property/follow-up data in RDS PostgreSQL, and serves query and market snapshot endpoints through CloudFront.
+Clearpath Lead Intelligence API exposes a GoHighLevel-compatible webhook receiver, stores paid lead/property/source data in RDS PostgreSQL, and serves query and market snapshot endpoints through CloudFront.
 
-The intended GoHighLevel connection is a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping, webhook authentication, and the external GHL setup still required for live delivery.
+The intended GoHighLevel connection is a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping, webhook authentication, and the external GHL setup still required for live delivery. GHL remains the CRM automation layer for pipelines, follow-up sequences, notifications, and Notion workflows. This API is the separate intelligence layer for source accountability, reporting, and market context.
 
 Architecture decision records are maintained in [decisions](decisions/README.md).
 
+## Business Workflow
+
+Paid lead providers already deliver motivated-seller leads into GoHighLevel. The API fits after that intake, as a second workflow action that receives the same lead event GHL is already using for CRM automation.
+
+```mermaid
+flowchart LR
+    provider["Paid lead provider"] --> ghl["GoHighLevel CRM"]
+    ghl --> sales["Pipelines, follow-up sequences, notifications"]
+    ghl --> notion["Existing Notion operating board"]
+    ghl --> api["Clearpath Lead Intelligence API"]
+    api --> db["PostgreSQL lead/source/property records"]
+    api --> reports["Source, county, situation, and market queries"]
+```
+
+The end user benefit is not another follow-up system. The benefit is a clean data layer for questions such as which lead source is worth buying again, which counties produce usable opportunities, which seller situations are common, and whether every purchased lead was captured into the reporting store.
+
 ```mermaid
 sequenceDiagram
-    participant Client as Client or GHL Workflow
+    participant Caller as GHL workflow or protected API client
     participant CF as CloudFront
     participant WAF as AWS WAF
     participant ALB as ALB
@@ -16,11 +32,11 @@ sequenceDiagram
     participant Proxy as RDS Proxy
     participant DB as RDS PostgreSQL
 
-    Client->>CF: HTTPS request to generated CloudFront domain
+    Caller->>CF: HTTPS request to generated CloudFront domain
     CF->>WAF: Managed rule and rate-limit evaluation
     WAF->>CF: Allow
     alt /api/market/* cache hit
-        CF-->>Client: Cached market snapshot
+        CF-->>Caller: Cached market snapshot
     else cache miss or dynamic endpoint
         CF->>ALB: HTTP origin request from CloudFront prefix list
         ALB->>ECS: HTTP on port 8000 inside VPC
@@ -29,7 +45,7 @@ sequenceDiagram
         DB-->>ECS: Query result
         ECS-->>ALB: JSON response
         ALB-->>CF: JSON response
-        CF-->>Client: JSON response
+        CF-->>Caller: JSON response
     end
 ```
 
@@ -56,7 +72,7 @@ The deployed network is a three-tier VPC in `us-east-1` with two Availability Zo
 
 ```mermaid
 flowchart TB
-    internet["Internet clients and optional GHL workflow"] --> cloudfront["CloudFront + WAF"]
+    internet["GHL workflow and protected API clients"] --> cloudfront["CloudFront + WAF"]
     cloudfront --> alb["Public subnets: ALB"]
     alb --> ecs["Private app subnets: ECS Fargate"]
     ecs --> proxy["Private app subnets: RDS Proxy"]
@@ -77,7 +93,7 @@ Security group rules mirror the same path:
 
 ## RDS vs. Aurora Decision Rationale
 
-The current database choice is standard RDS PostgreSQL, not Aurora. Clearpath's present workload is modest: a few webhook writes, lead/property/follow-up joins, and market snapshot reads that are cached by CloudFront. RDS is the more cost-effective fit for this stage because it can run on a small provisioned instance with predictable pricing while still providing managed PostgreSQL, backups, encryption, Secrets Manager integration, and a clean path to production hardening.
+The current database choice is standard RDS PostgreSQL, not Aurora. Clearpath's present workload is modest: a few webhook writes, lead/property/source reporting queries, and market snapshot reads that are cached by CloudFront. RDS is the more cost-effective fit for this stage because it can run on a small provisioned instance with predictable pricing while still providing managed PostgreSQL, backups, encryption, Secrets Manager integration, and a clean path to production hardening.
 
 The API does not currently need Aurora-level performance. The important path is fast webhook acknowledgement and straightforward relational queries, not high write throughput, global reads, or many read replicas. RDS PostgreSQL is enough for the expected lead volume, especially because `/api/market/*` is cacheable and should not repeatedly hit the database.
 
