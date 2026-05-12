@@ -1,8 +1,19 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE TABLE IF NOT EXISTS lead_sources (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name                VARCHAR(100) UNIQUE NOT NULL,
+    vendor_name         VARCHAR(255),
+    channel             VARCHAR(100),
+    cost_per_lead_cents INTEGER,
+    active              BOOLEAN DEFAULT TRUE,
+    created_at          TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS leads (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ghl_id      VARCHAR(255) UNIQUE NOT NULL,
+    source_id   UUID REFERENCES lead_sources(id) ON DELETE SET NULL,
     first_name  VARCHAR(255),
     last_name   VARCHAR(255),
     phone       VARCHAR(20),
@@ -48,10 +59,48 @@ CREATE TABLE IF NOT EXISTS market_snapshots (
     UNIQUE(county, state, snapshot_date)
 );
 
+CREATE TABLE IF NOT EXISTS webhook_events (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    provider    VARCHAR(100) DEFAULT 'gohighlevel',
+    external_id VARCHAR(255),
+    lead_id     UUID REFERENCES leads(id) ON DELETE SET NULL,
+    event_type  VARCHAR(100) DEFAULT 'contact',
+    payload     JSONB,
+    received_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lead_scores (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lead_id      UUID UNIQUE REFERENCES leads(id) ON DELETE CASCADE,
+    score        INTEGER NOT NULL,
+    priority     VARCHAR(50) NOT NULL,
+    reasons      JSONB DEFAULT '[]'::jsonb,
+    needs_review BOOLEAN DEFAULT FALSE,
+    updated_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS duplicate_leads (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lead_id           UUID REFERENCES leads(id) ON DELETE CASCADE,
+    duplicate_lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+    match_type        VARCHAR(50) NOT NULL,
+    confidence        INTEGER NOT NULL,
+    reason            TEXT,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(lead_id, duplicate_lead_id, match_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_leads_source_id ON leads(source_id);
 CREATE INDEX IF NOT EXISTS idx_leads_county ON leads(county);
 CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
 CREATE INDEX IF NOT EXISTS idx_follow_ups_lead_id ON follow_ups(lead_id);
 CREATE INDEX IF NOT EXISTS idx_follow_ups_next ON follow_ups(next_follow_up);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_lead_id ON webhook_events(lead_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_external_id ON webhook_events(external_id);
+CREATE INDEX IF NOT EXISTS idx_lead_scores_score ON lead_scores(score);
+CREATE INDEX IF NOT EXISTS idx_lead_scores_needs_review ON lead_scores(needs_review);
+CREATE INDEX IF NOT EXISTS idx_duplicate_leads_lead_id ON duplicate_leads(lead_id);
+CREATE INDEX IF NOT EXISTS idx_duplicate_leads_duplicate_id ON duplicate_leads(duplicate_lead_id);
 
 DO $$
 BEGIN

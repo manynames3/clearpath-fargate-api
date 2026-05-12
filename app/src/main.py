@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 
 from src.database import check_database_ready, init_db
+from src.dashboard import router as dashboard_router
+from src.intelligence import router as intelligence_router
 from src.leads import router as leads_router
 from src.market import router as market_router
 from src.webhooks import router as webhook_router
@@ -19,6 +21,8 @@ app = FastAPI(title="Clearpath Lead Intelligence API", lifespan=lifespan)
 app.include_router(webhook_router, prefix="/webhooks")
 app.include_router(leads_router, prefix="/api")
 app.include_router(market_router, prefix="/api")
+app.include_router(intelligence_router, prefix="/api")
+app.include_router(dashboard_router)
 
 
 @app.get("/health")

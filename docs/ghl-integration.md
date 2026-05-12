@@ -1,6 +1,6 @@
 # GoHighLevel Integration
 
-Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: a configured GHL workflow can send lead/contact data to this API, and the API upserts the lead plus property details into PostgreSQL. The app does not call the GHL API yet.
+Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: a configured GHL workflow can send lead/contact data to this API, and the API stores the raw event, upserts the lead plus property details, tracks source/vendor metadata, creates a lead score, and flags duplicate matches in PostgreSQL. The app does not call the GHL API yet.
 
 ## Where This Fits
 
@@ -16,7 +16,7 @@ The best live proof is a paid-lead-style event already entering GHL, followed by
 
 ## Current Status
 
-The repository includes the receiving endpoint, payload mapping, shared-secret validation, local tests, and AWS infrastructure needed to accept GHL-style webhook payloads. A live GoHighLevel workflow has not been connected or captured as evidence yet.
+The repository includes the receiving endpoint, payload mapping, shared-secret validation, local tests, intelligence endpoints, dashboard, and AWS infrastructure needed to accept GHL-style webhook payloads. A live GoHighLevel workflow has not been connected or captured as evidence yet.
 
 To prove the external integration, configure a GHL Workflow Custom Webhook during a future validation window, send a real lead-intake workflow event to the deployed CloudFront URL, and capture the GHL delivery log plus the resulting lead query from this API.
 
@@ -117,6 +117,15 @@ Field mapping:
 | `custom_fields.zip` | `properties.zip` |
 | `custom_fields.situation` | `properties.situation` |
 
+On successful ingestion, the API also writes:
+
+| Intelligence record | Purpose |
+|---|---|
+| `webhook_events` | Raw delivery audit trail for source accountability and debugging |
+| `lead_sources` | Source/vendor/channel metadata for scorecards |
+| `lead_scores` | Simple explainable score, priority, and needs-review flag |
+| `duplicate_leads` | Possible duplicate matches by phone, email, or property address |
+
 ## Signature Model
 
 The ephemeral deployment uses a shared HMAC secret stored in Secrets Manager. Terraform creates the secret container at `clearpath/dev/ghl-webhook`, but the value is loaded out-of-band so it never lands in Terraform state.
@@ -163,6 +172,19 @@ Then confirm the upsert:
 curl -f "http://localhost:8000/api/leads?county=Gwinnett&status=warm"
 ```
 
+Confirm the intelligence layer:
+
+```bash
+curl -f "http://localhost:8000/api/intelligence/summary"
+curl -f "http://localhost:8000/api/intelligence/lead-scores?needs_review=true"
+```
+
+Open the dashboard:
+
+```text
+http://localhost:8000/dashboard
+```
+
 In the deployed environment, lead queries are protected. Include `X-Clearpath-API-Key` with the value stored in the `clearpath/dev/api-key` Secrets Manager secret.
 
 ## Evidence To Capture Later
@@ -173,6 +195,8 @@ During a short paid AWS/GHL validation window, capture:
 - Custom Webhook action showing `POST` to `$API_BASE_URL/webhooks/ghl`; hide the secret header value.
 - Workflow execution or delivery log showing the Clearpath webhook returned `200`.
 - Protected `/api/leads` query showing the same GHL contact/source/property data stored in PostgreSQL.
+- `/api/intelligence/source-performance` or `/dashboard` showing the same source included in the paid-lead scorecard.
+- `/api/intelligence/lead-scores` showing score reasons and review priority for the delivered lead.
 - Optional Notion screenshot showing the existing workflow still receives the lead, proving the API is additive rather than a replacement.
 
 ## Later GHL API Work

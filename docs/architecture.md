@@ -22,6 +22,29 @@ flowchart LR
 
 The end user benefit is not another follow-up system. The benefit is a clean data layer for questions such as which lead source is worth buying again, which counties produce usable opportunities, which seller situations are common, and whether every purchased lead was captured into the reporting store.
 
+## Lead Intelligence Product Layer
+
+PostgreSQL is the source of truth for the intelligence layer. The API stores raw webhook events, normalized leads, property records, source/vendor metadata, duplicate matches, lead scores, and market snapshots. That keeps GHL focused on CRM execution while giving Clearpath a queryable reporting store for paid-lead decisions.
+
+The FastAPI service exposes the reporting layer through `/api/intelligence/*` endpoints and serves a small internal dashboard at `/dashboard`. The dashboard is intentionally read-focused: source scorecards, duplicate alerts, county performance, scored leads, market context, and the needs-review queue. If Notion or GHL need updates later, they should receive compact summaries from this API rather than becoming the primary analytics store.
+
+```mermaid
+flowchart LR
+    ghl["GHL workflow event"] --> api["FastAPI intelligence API"]
+    api --> events["Raw webhook events"]
+    api --> leads["Normalized leads and properties"]
+    api --> sources["Source/vendor metadata"]
+    api --> scores["Lead scores and duplicate matches"]
+    api --> market["Market snapshots"]
+    events --> pg["PostgreSQL"]
+    leads --> pg
+    sources --> pg
+    scores --> pg
+    market --> pg
+    api --> dashboard["Internal dashboard"]
+    api --> optional["Optional Notion/GHL summary sync"]
+```
+
 ## Runtime Decision
 
 The current workload does not strictly require ECS Fargate. A low-volume webhook receiver and reporting API could run on Lambda or another lower-idle-cost platform. This project uses Fargate because the architecture goal is a production-style AWS container service: private subnet tasks, ALB target registration, task roles, ECR image deployment, health checks, rolling deployments, rollback controls, CloudWatch logs, and RDS Proxy database access.

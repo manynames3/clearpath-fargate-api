@@ -15,7 +15,9 @@ This API does not replace that CRM workflow. It receives a copy of the GHL workf
 
 In short: GHL runs the sales workflow; Clearpath Lead Intelligence API owns the structured reporting and market-context layer.
 
-This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting queries with an API key, accepts signed GHL-compatible webhook payloads, and serves cached market snapshots. Future lead-intelligence endpoints can build on that data for source scorecards, duplicate detection, cost-per-source reporting, and county/situation trends without changing the CRM workflow.
+This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting queries with an API key, accepts signed GHL-compatible webhook payloads, serves cached market snapshots, and exposes intelligence endpoints for source performance, duplicate alerts, lead scores, and county performance.
+
+The internal dashboard at `/dashboard` turns those API results into an operator-facing view: source scorecard, duplicate lead alerts, hot/warm/dead breakdowns, newest leads with score reasons, market context by county, and the current "needs review" queue.
 
 ## Deployment Status
 
@@ -102,6 +104,7 @@ make smoke
 Open:
 
 - `http://localhost:8000/health`
+- `http://localhost:8000/dashboard`
 - `http://localhost:8000/api/leads?county=Gwinnett&limit=5`
 - `http://localhost:8000/api/market/gwinnett`
 
@@ -133,6 +136,18 @@ curl -f "http://localhost:8000/api/leads?county=Gwinnett&limit=5"
 
 ```bash
 curl -f "http://localhost:8000/api/market/gwinnett"
+```
+
+```bash
+curl -f "http://localhost:8000/api/intelligence/summary"
+```
+
+```bash
+curl -f "http://localhost:8000/api/intelligence/source-performance"
+```
+
+```bash
+curl -f "http://localhost:8000/api/intelligence/lead-scores?needs_review=true"
 ```
 
 ```bash
@@ -216,6 +231,7 @@ flowchart LR
     alb --> ecs["ECS Fargate clearpath-api"]
     ecs --> proxy["RDS Proxy"]
     proxy --> db["RDS PostgreSQL"]
+    ecs --> dashboard["Internal dashboard"]
     ecs --> secrets["Secrets Manager"]
     ecs --> logs["CloudWatch Logs"]
 ```
@@ -246,6 +262,12 @@ Security group flow is intentionally narrow:
 - `POST /webhooks/ghl` - GoHighLevel-compatible contact webhook ingestion
 - `GET /api/leads?county=Gwinnett&status=warm&days_since_contact=30` - protected reporting query with `X-Clearpath-API-Key` when configured
 - `GET /api/market/gwinnett`
+- `GET /api/intelligence/summary`
+- `GET /api/intelligence/source-performance`
+- `GET /api/intelligence/duplicates`
+- `GET /api/intelligence/lead-scores`
+- `GET /api/intelligence/county-performance`
+- `GET /dashboard` - internal lead intelligence dashboard
 - `GET /health`
 - `GET /ready` - database readiness check
 
@@ -297,7 +319,7 @@ When validating the stack in AWS, capture artifacts that show the build ran end 
 | ECS/Fargate | Cluster, service, two running tasks, task definition, and CloudWatch logs |
 | Database | RDS PostgreSQL private accessibility, encryption, Secrets Manager integration, and RDS Proxy healthy target |
 | Edge | CloudFront distribution deployed, WAF attached, generated domain or optional custom-domain behavior, and `/api/market/*` cache hit |
-| API | `/health`, `/ready`, `/webhooks/ghl`, protected `/api/leads`, and `/api/market/gwinnett` responses through `api_base_url` |
+| API | `/health`, `/ready`, `/webhooks/ghl`, protected `/api/leads`, `/api/intelligence/*`, `/api/market/gwinnett`, and `/dashboard` responses through `api_base_url` |
 | Teardown | ECS scaled down, Terraform destroy completed, and billable resources removed |
 
 After apply, collect read-only CLI evidence with:

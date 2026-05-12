@@ -1,6 +1,6 @@
 # Test Results
 
-Last verified: 2026-05-12 18:40 EDT from `/Users/aiden/clearpath-fargate-api-work`.
+Last verified: 2026-05-12 19:33 EDT from `/Users/aiden/clearpath-fargate-api-work`.
 
 ## Local Validation
 
@@ -16,14 +16,24 @@ Summary:
 
 | Check | Result |
 |---|---|
-| FastAPI test suite | `13 passed` |
+| FastAPI test suite | `19 passed` |
 | Terraform format check | Passed |
 | Terraform init with backend disabled | Passed |
 | Terraform validate | Passed |
 | Kubernetes manifest render | Passed: local overlay rendered 8 objects, EKS overlay rendered 9 objects |
 | Checkov Terraform scan | `339 passed`, `0 failed`, `44 skipped` |
 | Checkov Kubernetes scan | `96 passed`, `0 failed`, `1 skipped` |
-| Alembic sanity check | Initial revision discovered with `alembic history`; migration files compile |
+| Alembic sanity check | Initial revision plus Phase 7 intelligence revision discovered with `alembic history`; migration files compile |
+
+## Local Phase 7 Smoke
+
+Seeded a temporary SQLite database and served the API locally on port `8010` with `LOCAL_CREATE_TABLES=true`.
+
+Verified:
+
+- `/api/intelligence/summary` returned lead, source, duplicate, review queue, and average score totals.
+- `/api/intelligence/lead-scores?needs_review=true` returned scored leads with reasons and priorities.
+- `/dashboard` rendered the source scorecard, duplicate alerts, county performance, and needs-review queue from the API.
 
 ## GitHub Actions
 
@@ -55,4 +65,4 @@ Evidence:
 
 ![CloudFront health response](screenshots/live-validation/01-cloudfront-health-response.png)
 
-The AWS stack was destroyed after evidence capture to avoid ongoing cost. A future paid validation window should capture the full deployed smoke set: `/ready`, `/webhooks/ghl`, protected `/api/leads`, `/api/market/gwinnett`, and CloudFront cache headers.
+The AWS stack was destroyed after evidence capture to avoid ongoing cost. A future paid validation window should capture the full deployed smoke set: `/ready`, `/webhooks/ghl`, protected `/api/leads`, `/api/intelligence/summary`, `/api/intelligence/source-performance`, `/api/intelligence/lead-scores?needs_review=true`, `/dashboard`, `/api/market/gwinnett`, and CloudFront cache headers.

@@ -36,6 +36,7 @@ export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw a
 | ALB target health | `docs/screenshots/alb-target-health.png` | Targets healthy on `/health`. |
 | RDS PostgreSQL | `docs/screenshots/rds-instance.png` | Private database, encrypted storage, IAM auth enabled. |
 | RDS Proxy | `docs/screenshots/rds-proxy-targets.png` | Proxy target registered and available. |
+| Intelligence dashboard | `docs/screenshots/dashboard.png` | `/dashboard` showing source scorecard, duplicate alerts, lead scores, and county performance. |
 | CloudFront | `docs/screenshots/cloudfront-distribution.png` | Distribution deployed with generated domain, or API aliases if custom-domain mode is enabled. |
 | WAF | `docs/screenshots/waf-web-acl.png` | WebACL attached to CloudFront. |
 | CloudWatch | `docs/screenshots/cloudwatch-dashboard.png` | ECS, ALB, CloudFront, and RDS widgets visible. |
@@ -87,6 +88,27 @@ curl -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" \
 Expected: the webhook lead appears with property data.
 
 If a live GHL workflow is connected, expected: the lead source/vendor, county, property address, and situation match the GHL delivery payload.
+
+```bash
+curl -f "$API_BASE_URL/api/intelligence/summary" \
+  -H "X-Clearpath-API-Key: <redacted>"
+```
+
+Expected: totals for leads, sources, duplicate alerts, review queue, and average score.
+
+```bash
+curl -f "$API_BASE_URL/api/intelligence/source-performance" \
+  -H "X-Clearpath-API-Key: <redacted>"
+```
+
+Expected: paid lead source/vendor scorecard with lead counts, review count, duplicate count, and average score.
+
+```bash
+curl -f "$API_BASE_URL/api/intelligence/lead-scores?needs_review=true" \
+  -H "X-Clearpath-API-Key: <redacted>"
+```
+
+Expected: scored leads with priority, reasons, and needs-review flags.
 
 ```bash
 curl -i "$API_BASE_URL/api/market/gwinnett"
@@ -145,6 +167,7 @@ aws cloudfront list-distributions \
 - ECS Fargate is selected to demonstrate production-style AWS container operations, not because the first webhook volume requires always-on containers.
 - RDS Proxy remains valuable because ECS/Fargate tasks can create many short-lived database connections.
 - GHL remains the CRM automation layer. This API is the reporting and source-accountability layer for paid leads.
+- The dashboard is a read-focused internal product surface over the API, not a replacement CRM.
 - A lower-cost serverless runtime could be valid for a tiny permanent deployment; this stack is intentionally a container-platform validation build with teardown controls.
 - RDS Multi-AZ is the first production availability upgrade.
 - Aurora PostgreSQL is the future option when read scaling, stricter failover, or more dynamic capacity scaling is justified.

@@ -85,6 +85,11 @@ curl -f "$API_BASE_URL/ready"
 curl -I "$API_BASE_URL/api/market/gwinnett"
 curl -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" \
   -H "X-Clearpath-API-Key: <redacted>"
+curl -f "$API_BASE_URL/api/intelligence/summary" \
+  -H "X-Clearpath-API-Key: <redacted>"
+curl -f "$API_BASE_URL/api/intelligence/lead-scores?needs_review=true" \
+  -H "X-Clearpath-API-Key: <redacted>"
 ```
 
 The second market request should return a CloudFront cache hit after the first successful origin response.
+Open `$API_BASE_URL/dashboard` to verify the internal lead intelligence dashboard loads through CloudFront.

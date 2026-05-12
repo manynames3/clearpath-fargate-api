@@ -120,3 +120,73 @@ class MarketSnapshotResponse(BaseModel):
     cache_ttl: int = 3600
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class BreakdownItem(BaseModel):
+    label: str
+    count: int
+
+
+class IntelligenceSummary(BaseModel):
+    total_leads: int
+    total_sources: int
+    total_duplicates: int
+    needs_review_count: int
+    average_score: float | None
+    status_counts: list[BreakdownItem]
+    top_counties: list[BreakdownItem]
+    recent_webhook_events: int
+
+
+class SourcePerformanceItem(BaseModel):
+    source: str
+    vendor_name: str | None = None
+    channel: str | None = None
+    total_leads: int
+    hot_leads: int
+    warm_leads: int
+    closed_leads: int
+    dead_leads: int
+    duplicate_count: int
+    needs_review_count: int
+    average_score: float | None
+    estimated_spend_dollars: float | None = None
+
+
+class DuplicateLeadItem(BaseModel):
+    id: str
+    lead_id: str
+    duplicate_lead_id: str
+    match_type: str
+    confidence: int
+    reason: str | None = None
+    lead_name: str
+    duplicate_name: str
+    created_at: datetime
+
+
+class LeadScoreItem(BaseModel):
+    lead_id: str
+    lead_name: str
+    source: str | None = None
+    county: str | None = None
+    status: str
+    score: int
+    priority: str
+    reasons: list[str]
+    needs_review: bool
+    property_address: str | None = None
+    updated_at: datetime
+
+
+class CountyPerformanceItem(BaseModel):
+    county: str
+    state: str
+    total_leads: int
+    hot_leads: int
+    warm_leads: int
+    duplicate_count: int
+    needs_review_count: int
+    average_score: float | None
+    median_price: int | None = None
+    avg_dom: int | None = None
