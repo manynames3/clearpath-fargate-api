@@ -25,7 +25,17 @@ Summary:
 | Checkov Kubernetes scan | `96 passed`, `0 failed`, `1 skipped` |
 | Alembic sanity check | Initial revision discovered with `alembic history`; migration files compile |
 
-The GitHub Actions `Terraform Validate` workflow includes Kubernetes render validation with `kubectl` installed. The latest infrastructure/app validation workflows on `main` were green before this docs/migration update.
+## GitHub Actions
+
+Latest `Build and Deploy` push workflow for commit `4c1c942` passed on 2026-05-12:
+
+- Python dependencies installed
+- FastAPI tests passed
+- Hadolint passed
+- Docker image built successfully
+- ECR push / ECS deployment job skipped because it only runs on manual dispatch with `deploy=true`
+
+The `Terraform Validate` workflow includes Kubernetes render validation with `kubectl` installed and remains scoped to infrastructure or Kubernetes changes.
 
 ## Deployed CloudFront Smoke Artifact
 
