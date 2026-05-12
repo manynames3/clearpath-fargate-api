@@ -21,6 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "aiosqlite",
+  "alembic",
   "checkov",
   "factory-boy",
   "httpx",

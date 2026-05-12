@@ -69,6 +69,7 @@ Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel-ready webhook receiver, setup requirements, and payload mapping.
 Use [docs/github-deploy-setup.md](docs/github-deploy-setup.md) for the manual GitHub Actions image deployment path.
 Use [docs/terraform-backend.md](docs/terraform-backend.md) before moving from local state to remote Terraform state.
+See [docs/test-results.md](docs/test-results.md) for the latest local validation summary and deployed CloudFront smoke artifact.
 See [docs/decisions](docs/decisions/README.md) for architecture decision records.
 
 Before opening an AWS validation window, run:
@@ -244,6 +245,10 @@ terraform -chdir=terraform/environments/dev init -backend=false
 terraform -chdir=terraform/environments/dev validate
 .venv/bin/checkov -d terraform/ --framework terraform --quiet
 ```
+
+## Database Migrations
+
+The repo now includes an Alembic migration scaffold under `app/alembic/`. The initial revision mirrors `sql/schema.sql` and gives the project a production-style path for future schema changes. The short-lived AWS validation path still uses `scripts/migrate.sh` as a simple bootstrap script.
 
 ## Apply Gate
 
