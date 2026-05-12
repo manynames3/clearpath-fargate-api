@@ -6,6 +6,8 @@ Pricing changes by region, date, architecture, traffic, and free-tier eligibilit
 
 The default validation mode uses the generated CloudFront domain, so there is no domain registration cost and no Route53 hosted-zone maintenance cost. Route53/ACM custom-domain resources are optional and disabled unless `use_custom_domain = true`.
 
+ECS Fargate is part of the project because this repo is demonstrating AWS container operations. For a tiny always-on webhook receiver, Lambda or another managed runtime could be cheaper. The cost guardrail for this project is not to leave the container stack running indefinitely; deploy it for validation, capture evidence, and tear it down.
+
 ## Free Tier and Paid Plan Note
 
 This stack uses paid AWS resources by design: ECS Fargate, ALB, NAT Gateway, RDS PostgreSQL, RDS Proxy, WAF, VPC endpoints, and CloudWatch. Some new AWS Free Tier plan accounts can block paid features before billing is fully enabled; RDS Proxy is one resource that may be rejected with `FreeTierRestrictionError`.

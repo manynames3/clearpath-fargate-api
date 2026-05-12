@@ -22,6 +22,12 @@ flowchart LR
 
 The end user benefit is not another follow-up system. The benefit is a clean data layer for questions such as which lead source is worth buying again, which counties produce usable opportunities, which seller situations are common, and whether every purchased lead was captured into the reporting store.
 
+## Runtime Decision
+
+The current workload does not strictly require ECS Fargate. A low-volume webhook receiver and reporting API could run on Lambda or another lower-idle-cost platform. This project uses Fargate because the architecture goal is a production-style AWS container service: private subnet tasks, ALB target registration, task roles, ECR image deployment, health checks, rolling deployments, rollback controls, CloudWatch logs, and RDS Proxy database access.
+
+That distinction matters in design reviews. The defensible claim is not that GHL webhook volume requires Fargate on day one. The defensible claim is that this repo demonstrates container platform operations around a small, realistic business API, with explicit cost controls and teardown documentation. If the intelligence layer later adds batch enrichment, source-quality analysis, or scheduled vendor reporting workers, the container runtime becomes more directly useful.
+
 ```mermaid
 sequenceDiagram
     participant Caller as GHL workflow or protected API client

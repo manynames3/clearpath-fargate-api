@@ -15,6 +15,8 @@ This API does not replace that CRM workflow. It receives a copy of the GHL workf
 
 In short: GHL runs the sales workflow; Clearpath Lead Intelligence API owns the structured reporting and market-context layer.
 
+This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting queries with an API key, accepts signed GHL-compatible webhook payloads, and serves cached market snapshots. Future lead-intelligence endpoints can build on that data for source scorecards, duplicate detection, cost-per-source reporting, and county/situation trends without changing the CRM workflow.
+
 ## Deployment Status
 
 This repo has been validated locally and through a short-lived AWS deployment. The AWS stack is currently destroyed to avoid ongoing ECS, ALB, RDS, RDS Proxy, NAT, CloudFront, WAF, and logging charges. Do not run `terraform apply` again until you intentionally want to create billable AWS resources.
@@ -155,9 +157,15 @@ curl -X POST http://localhost:8000/webhooks/ghl \
 
 ## Why This Architecture
 
+### Runtime Decision
+
+ECS Fargate is not required because the first version of this API has high traffic. A small webhook receiver could be cheaper on Lambda, API Gateway, or a managed app platform. Fargate is used here because the project is intentionally demonstrating a production-style container service on AWS: private tasks with no public IPs, ALB target groups, task roles, ECR image deployment, health checks, rolling deployments, deployment rollback controls, CloudWatch logs, and RDS Proxy integration.
+
+That tradeoff is deliberate. For a tiny permanent production workload, the lowest-cost answer might be serverless. For this validation-oriented system, the goal is to show that the same small FastAPI application can be operated like a real containerized service and then destroyed after validation to control cost. Fargate becomes more directly justified if the service grows into longer-running enrichment jobs, source-quality analysis, scheduled vendor reporting, or other containerized workers that do not fit a simple request/response function model.
+
 | Service | Why not the alternative |
 |---|---|
-| ECS Fargate | GHL webhooks need warm, predictable responses. Lambda in a VPC can introduce cold-start latency, and future scoring jobs may exceed Lambda's runtime model. |
+| ECS Fargate | A small webhook could run on Lambda, but this repo intentionally demonstrates AWS container operations: private tasks, ALB routing, task roles, health checks, rolling deployments, CloudWatch logs, and RDS Proxy connectivity. |
 | RDS PostgreSQL | Paid lead, property, source, and market data is relational and benefits from joins. DynamoDB is not the right primary shape for this reporting workflow, and Aurora is more capacity than the current workload needs. |
 | RDS Proxy | Fargate tasks create database connections; the proxy pools and protects the database from connection pressure. |
 | CloudFront | Market snapshot responses are cacheable and should not hit Fargate or the database on every read. |

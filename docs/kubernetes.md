@@ -1,6 +1,6 @@
 # Kubernetes Track
 
-This repository keeps ECS Fargate as the implemented AWS deployment path and adds Kubernetes as an optional platform track. That is intentional: ECS/Fargate provides AWS-native container operations, while the Kubernetes manifests show the same API can run on a standard orchestrator such as EKS.
+This repository keeps ECS Fargate as the implemented AWS deployment path and adds Kubernetes as an optional platform track. That is intentional: ECS/Fargate provides AWS-native container operations for the validation run, while the Kubernetes manifests show the same API can run on a standard orchestrator such as EKS.
 
 No EKS cluster is deployed by default. EKS has a control plane cost and adds operational overhead, so the Kubernetes layer is source-only until there is a deliberate validation window.
 
@@ -86,4 +86,4 @@ Keeping both tracks documents two practical container deployment options:
 
 ## Platform Decision
 
-The main deployment path is ECS Fargate because it is cost-effective and AWS-native for this API. The Kubernetes/EKS track provides portable container operations through Deployment health probes, autoscaling, disruption budgets, network policy, and ingress. EKS becomes the better fit if the organization standardizes on Kubernetes or needs platform-level consistency across services; it is not required for a small standalone API by default.
+The main deployment path is ECS Fargate because it is AWS-native and simpler than EKS for this single-service validation stack. It is not presented as the only valid runtime for a low-volume webhook API; Lambda or another managed runtime could be cheaper for a tiny permanent workload. The Kubernetes/EKS track provides portable container operations through Deployment health probes, autoscaling, disruption budgets, network policy, and ingress. EKS becomes the better fit if the organization standardizes on Kubernetes or needs platform-level consistency across services; it is not required for a small standalone API by default.

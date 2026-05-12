@@ -142,8 +142,10 @@ aws cloudfront list-distributions \
 ## Design Notes
 
 - RDS was selected for the implemented build because current volume is modest and predictable.
+- ECS Fargate is selected to demonstrate production-style AWS container operations, not because the first webhook volume requires always-on containers.
 - RDS Proxy remains valuable because ECS/Fargate tasks can create many short-lived database connections.
 - GHL remains the CRM automation layer. This API is the reporting and source-accountability layer for paid leads.
+- A lower-cost serverless runtime could be valid for a tiny permanent deployment; this stack is intentionally a container-platform validation build with teardown controls.
 - RDS Multi-AZ is the first production availability upgrade.
 - Aurora PostgreSQL is the future option when read scaling, stricter failover, or more dynamic capacity scaling is justified.
 - The stack is intentionally teardown-first to avoid idle ECS, ALB, NAT, RDS, RDS Proxy, CloudFront, and WAF cost.
