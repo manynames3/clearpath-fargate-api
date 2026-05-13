@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS properties (
     address         TEXT,
     city            VARCHAR(100),
     county          VARCHAR(100),
+    county_resolution_method VARCHAR(50),
+    county_resolution_confidence INTEGER,
     state           CHAR(2),
     zip             VARCHAR(10),
     estimated_value INTEGER,

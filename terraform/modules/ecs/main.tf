@@ -528,7 +528,9 @@ resource "aws_ecs_task_definition" "api" {
         { name = "DB_SECRET_ARN", value = var.database_secret_arn },
         { name = "DB_PROXY_ENDPOINT", value = var.rds_proxy_endpoint },
         { name = "GHL_WEBHOOK_SECRET", value = var.ghl_webhook_secret_arn },
-        { name = "CLEARPATH_API_KEY_SECRET", value = var.api_key_secret_arn }
+        { name = "CLEARPATH_API_KEY_SECRET", value = var.api_key_secret_arn },
+        { name = "COUNTY_GEOCODING_ENABLED", value = tostring(var.county_geocoding_enabled) },
+        { name = "COUNTY_GEOCODING_TIMEOUT_SECONDS", value = tostring(var.county_geocoding_timeout_seconds) }
       ]
 
       readonlyRootFilesystem = true

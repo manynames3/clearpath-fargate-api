@@ -1,6 +1,6 @@
 # Test Results
 
-Last verified: 2026-05-12 19:33 EDT from `/Users/aiden/clearpath-fargate-api-work`.
+Last verified: 2026-05-12 21:12 EDT from `/Users/aiden/clearpath-fargate-api-work`.
 
 ## Local Validation
 
@@ -16,14 +16,14 @@ Summary:
 
 | Check | Result |
 |---|---|
-| FastAPI test suite | `19 passed` |
+| FastAPI test suite | `24 passed` |
 | Terraform format check | Passed |
 | Terraform init with backend disabled | Passed |
 | Terraform validate | Passed |
 | Kubernetes manifest render | Passed: local overlay rendered 8 objects, EKS overlay rendered 9 objects |
 | Checkov Terraform scan | `339 passed`, `0 failed`, `44 skipped` |
 | Checkov Kubernetes scan | `96 passed`, `0 failed`, `1 skipped` |
-| Alembic sanity check | Initial revision plus Phase 7 intelligence revision discovered with `alembic history`; migration files compile |
+| Alembic sanity check | Initial revision plus Phase 7 intelligence and county-resolution revisions discovered; migration files compile |
 
 ## Local Phase 7 Smoke
 

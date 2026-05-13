@@ -69,7 +69,7 @@ Expected:
 curl -X POST "$API_BASE_URL/webhooks/ghl" \
   -H "Content-Type: application/json" \
   -H "X-Clearpath-Webhook-Secret: <redacted>" \
-  -d '{"id":"validation-ghl-001","firstName":"Validation","lastName":"Lead","source":"paid-lead-vendor-a","status":"warm","customFields":[{"key":"county","field_value":"Gwinnett"},{"key":"property_address","field_value":"25 Validation Ridge"},{"key":"situation","field_value":"vacant"}]}'
+  -d '{"id":"validation-ghl-001","firstName":"Validation","lastName":"Lead","source":"paid-lead-vendor-a","status":"warm","customFields":[{"key":"property_address","field_value":"25 Validation Ridge, Lawrenceville, GA 30043"},{"key":"zip","field_value":"30043"},{"key":"situation","field_value":"vacant"}]}'
 ```
 
 Expected:
@@ -78,7 +78,7 @@ Expected:
 {"status":"accepted","lead_id":"<uuid>"}
 ```
 
-This proves the deployed receiver accepts a GHL-style payload. To prove the external GoHighLevel integration, also capture the GHL Workflow Custom Webhook delivery log from the paid-lead intake workflow used for validation. GHL should still own follow-up sequences, notifications, and Notion handoff; the Clearpath webhook is only the reporting/source-accountability copy.
+This proves the deployed receiver accepts a GHL-style payload and resolves county when the provider sends a full address but no county field. To prove the external GoHighLevel integration, also capture the GHL Workflow Custom Webhook delivery log from the paid-lead intake workflow used for validation. GHL should still own follow-up sequences, notifications, and Notion handoff; the Clearpath webhook is only the reporting/source-accountability copy.
 
 ```bash
 curl -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" \

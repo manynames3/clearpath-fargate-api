@@ -13,6 +13,8 @@ Clearpath already uses GoHighLevel as the CRM. Paid lead providers send seller c
 
 This API does not replace that CRM workflow. It receives a copy of the GHL workflow event and creates an independent, queryable lead intelligence layer in PostgreSQL. The practical end-user value is source accountability and lead analysis: which paid lead sources, counties, provider tags, and seller situations are worth buying again, and what county-level market context should be shown with each full-address lead.
 
+If the provider sends a full property address but no county, the ingestion path resolves county automatically instead of making the dashboard parse address text. It prefers an explicit provider/GHL county field, then address geocoding, then a ZIP fallback with stored resolution confidence.
+
 In short: GHL runs the sales workflow; Clearpath Lead Intelligence API owns the structured reporting and market-context layer.
 
 This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting queries with an API key, accepts signed GHL-compatible webhook payloads, serves cached market snapshots, and exposes intelligence endpoints for source performance, lead scores, county performance, and data-quality checks.

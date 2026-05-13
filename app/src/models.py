@@ -59,6 +59,8 @@ class Property(Base):
     address: Mapped[str | None] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(String(100))
     county: Mapped[str | None] = mapped_column(String(100))
+    county_resolution_method: Mapped[str | None] = mapped_column(String(50))
+    county_resolution_confidence: Mapped[int | None] = mapped_column(Integer)
     state: Mapped[str | None] = mapped_column(String(2))
     zip: Mapped[str | None] = mapped_column(String(10))
     estimated_value: Mapped[int | None] = mapped_column(Integer)

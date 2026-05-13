@@ -128,6 +128,8 @@ class PropertyResponse(BaseModel):
     address: str | None = None
     city: str | None = None
     county: str | None = None
+    county_resolution_method: str | None = None
+    county_resolution_confidence: int | None = None
     state: str | None = None
     zip: str | None = None
     estimated_value: int | None = None

@@ -28,6 +28,11 @@ PostgreSQL is the source of truth for the intelligence layer. The API stores raw
 
 The FastAPI service exposes the reporting layer through `/api/intelligence/*` endpoints and serves a small internal dashboard at `/dashboard`. The dashboard is intentionally read-focused: source scorecards, provider quality signals, county performance, scored leads, market context, and the needs-review queue. If Notion or GHL need updates later, they should receive compact summaries from this API rather than becoming the primary analytics store.
 
+County Performance is backed by structured county fields, not address-string parsing.
+Ingestion resolves county from an explicit provider/GHL field, address geocoding, or a
+known ZIP fallback and stores the method/confidence on the property record. That keeps
+county sorting useful even when the lead provider only sends a full street address.
+
 ```mermaid
 flowchart LR
     ghl["GHL workflow event"] --> api["FastAPI intelligence API"]

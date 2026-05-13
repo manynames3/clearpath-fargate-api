@@ -8,6 +8,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import fetch_secret_string, get_settings
+from src.county_resolver import resolve_county
 from src.database import get_session
 from src.models import DuplicateLead, Lead, LeadScore, LeadSource, Property, WebhookEvent
 from src.schemas import GHLWebhookPayload
@@ -190,7 +191,11 @@ def _score_lead(lead: Lead, prop: Property | None, has_duplicate: bool) -> tuple
         reasons.append("Missing property address")
     if lead.county:
         score += 4
-        reasons.append(f"County captured: {lead.county}")
+        if prop and prop.county_resolution_method and prop.county_resolution_method != "provider":
+            method = prop.county_resolution_method.replace("_", " ")
+            reasons.append(f"County resolved from {method}: {lead.county}")
+        else:
+            reasons.append(f"County captured: {lead.county}")
     if prop and prop.zip:
         score += 4
         reasons.append(f"ZIP captured: {prop.zip}")
@@ -401,7 +406,8 @@ async def upsert_lead_from_payload(
     lead.email = payload.email
     lead.status = payload.status or "new"
     lead.source = payload.source
-    lead.county = _field(fields, "county")
+    explicit_county = _field(fields, "county")
+    lead.county = explicit_county
     lead.state = _normalize_state(_field(fields, "state"))
 
     await session.flush()
@@ -416,7 +422,6 @@ async def upsert_lead_from_payload(
             session.add(prop)
         prop.address = address
         prop.city = _field(fields, "city")
-        prop.county = lead.county
         prop.state = lead.state
         prop.zip = _field(fields, "zip") or _zip_from_address(address)
         prop.situation = _field(fields, "situation")
@@ -428,6 +433,21 @@ async def upsert_lead_from_payload(
         prop.property_type = _field(fields, "property_type")
         prop.years_owned = _field(fields, "years_owned")
         prop.apn = _field(fields, "apn")
+
+    resolution = await resolve_county(
+        explicit_county=explicit_county,
+        address=prop.address if prop else _field(fields, "property_address", "address"),
+        city=prop.city if prop else _field(fields, "city"),
+        state=lead.state,
+        zip_code=prop.zip if prop else _field(fields, "zip"),
+    )
+    lead.county = resolution.county
+    lead.state = resolution.state or lead.state
+    if prop:
+        prop.county = resolution.county
+        prop.state = lead.state
+        prop.county_resolution_method = resolution.method
+        prop.county_resolution_confidence = resolution.confidence
 
     session.add(
         WebhookEvent(

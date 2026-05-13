@@ -22,7 +22,7 @@ The score is driven by fields that affect acquisition priority:
 | Repair scope | major remodel, deferred maintenance, cosmetic, turnkey | Larger repair needs raise priority |
 | Property type | single family, condo, land, mobile home | Single-family properties are preferred |
 | Ownership length | `15-19 years`, `10-14 years` | Longer ownership adds a small signal |
-| County/ZIP | county and ZIP present | Enables market context and provider reporting |
+| County/ZIP | provider county, resolved address county, ZIP | Enables market context and provider reporting |
 
 The score is capped between `0` and `100`. Current priority bands:
 
@@ -55,6 +55,21 @@ For example, these provider fields map into normalized columns:
 | `APN` | `properties.apn` |
 
 Full state names such as `Georgia` are normalized to two-letter codes such as `GA`.
+
+## County Resolution
+
+County Performance does not assume the county is already present in the address field.
+During webhook ingestion and CSV backfill, the API resolves county in this order:
+
+1. Use an explicit provider/GHL county field when supplied.
+2. Use the property address with the U.S. Census geocoder when geocoding is enabled.
+3. Fall back to a ZIP-to-county crosswalk for known operating ZIP codes.
+
+The normalized county is written to both `leads.county` and `properties.county`, so
+dashboard grouping and `/api/intelligence/county-performance` sort on structured data
+instead of parsing display addresses. The property record also stores
+`county_resolution_method` and `county_resolution_confidence` so lower-confidence ZIP
+matches can be distinguished from provider-supplied or address-geocoded matches.
 
 ## Backfilling Existing Leads
 

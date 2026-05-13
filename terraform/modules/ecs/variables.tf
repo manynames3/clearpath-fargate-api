@@ -88,6 +88,18 @@ variable "api_key_secret_arn" {
   type        = string
 }
 
+variable "county_geocoding_enabled" {
+  description = "Whether the API should resolve missing counties from property addresses during ingestion."
+  type        = bool
+  default     = true
+}
+
+variable "county_geocoding_timeout_seconds" {
+  description = "Timeout for county geocoding lookups during webhook ingestion."
+  type        = number
+  default     = 2
+}
+
 variable "acm_cert_arn" {
   description = "ACM certificate ARN for the ALB HTTPS listener. Empty string defers listener creation until DNS/ACM is wired."
   type        = string

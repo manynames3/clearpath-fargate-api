@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     clearpath_api_key_secret: str | None = Field(default=None, alias="CLEARPATH_API_KEY_SECRET")
     skip_db_init: bool = Field(default=False, alias="SKIP_DB_INIT")
     local_create_tables: bool = Field(default=False, alias="LOCAL_CREATE_TABLES")
+    county_geocoding_enabled: bool = Field(default=True, alias="COUNTY_GEOCODING_ENABLED")
+    county_geocoding_timeout_seconds: float = Field(default=2.0, alias="COUNTY_GEOCODING_TIMEOUT_SECONDS")
 
     model_config = SettingsConfigDict(populate_by_name=True)
 

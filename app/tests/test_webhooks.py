@@ -104,9 +104,13 @@ async def test_ghl_webhook_maps_provider_detail_fields_into_score(client):
         assert stored_lead.phone == "+18133106902"
         assert stored_lead.email == "seller@example.com"
         assert stored_lead.state == "GA"
+        assert stored_lead.county == "Houston"
 
         prop = (await session.execute(select(Property).where(Property.lead_id == stored_lead.id))).scalar_one_or_none()
         assert prop is not None
+        assert prop.county == "Houston"
+        assert prop.county_resolution_method == "zip_crosswalk"
+        assert prop.county_resolution_confidence == 70
         assert prop.occupancy == "Vacant"
         assert prop.selling_urgency == "ASAP"
         assert prop.seller_type == "Owner"

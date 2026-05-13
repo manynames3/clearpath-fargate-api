@@ -110,7 +110,7 @@ Field mapping:
 | `email` | `leads.email` |
 | `source` | `leads.source`, normally the paid lead vendor, campaign, or channel |
 | `status` | `leads.status` |
-| `custom_fields.county` or `customFields[].key=county` | `leads.county`, `properties.county` |
+| `custom_fields.county` or `customFields[].key=county` | `leads.county`, `properties.county`; optional because the API can resolve county from address/ZIP |
 | `custom_fields.property_address` or `customFields[].key=property_address` | `properties.address` |
 | `custom_fields.city` | `properties.city` |
 | `custom_fields.state` | `leads.state`, `properties.state` |
@@ -128,7 +128,12 @@ Field mapping:
 | `Years of ownership` | `properties.years_owned` |
 | `APN` | `properties.apn` |
 
-State names such as `Georgia` are normalized to `GA` before storage.
+State names such as `Georgia` are normalized to `GA` before storage. If the lead provider
+does not send county, the ingestion path resolves county from the property address first
+and falls back to ZIP for known operating areas. The stored property includes
+`county_resolution_method` and `county_resolution_confidence` so reporting can show whether
+County Performance is based on provider data, address geocoding, or a lower-confidence ZIP
+match.
 
 On successful ingestion, the API also writes:
 

@@ -20,44 +20,52 @@ WHERE leads.source = lead_sources.name
   AND leads.source_id IS NULL;
 
 INSERT INTO properties (
-    lead_id, address, city, county, state, zip, estimated_value, situation,
+    lead_id, address, city, county, county_resolution_method, county_resolution_confidence,
+    state, zip, estimated_value, situation,
     occupancy, selling_urgency, seller_type, listing_status, repair_scope,
     property_type, years_owned, apn
 )
-SELECT id, '123 Main St', 'Lawrenceville', 'Gwinnett', 'GA', '30046', 285000, 'inherited',
+SELECT id, '123 Main St', 'Lawrenceville', 'Gwinnett', 'provider', 100,
+       'GA', '30046', 285000, 'inherited',
        'Vacant', 'ASAP', 'Owner', 'Not listed', 'Major remodel: kitchen, bathroom, roof',
        'Single family', '15-19 years', 'sample-apn-001'
 FROM leads WHERE ghl_id = 'sample-ghl-001'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO properties (
-    lead_id, address, city, county, state, zip, estimated_value, situation,
+    lead_id, address, city, county, county_resolution_method, county_resolution_confidence,
+    state, zip, estimated_value, situation,
     occupancy, selling_urgency, seller_type, listing_status, repair_scope,
     property_type, years_owned, apn
 )
-SELECT id, '44 Pine Ridge Dr', 'Marietta', 'Cobb', 'GA', '30060', 410000, 'vacant',
+SELECT id, '44 Pine Ridge Dr', 'Marietta', 'Cobb', 'provider', 100,
+       'GA', '30060', 410000, 'vacant',
        'Vacant', '30 days', 'Owner', 'Not listed', 'Deferred maintenance',
        'Single family', '10-14 years', 'sample-apn-002'
 FROM leads WHERE ghl_id = 'sample-ghl-002'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO properties (
-    lead_id, address, city, county, state, zip, estimated_value, situation,
+    lead_id, address, city, county, county_resolution_method, county_resolution_confidence,
+    state, zip, estimated_value, situation,
     occupancy, selling_urgency, seller_type, listing_status, repair_scope,
     property_type, years_owned, apn
 )
-SELECT id, '411 Cascade Ave', 'Atlanta', 'Fulton', 'GA', '30310', 310000, 'tax-delinquent',
+SELECT id, '411 Cascade Ave', 'Atlanta', 'Fulton', 'provider', 100,
+       'GA', '30310', 310000, 'tax-delinquent',
        'Owner occupied', 'Soon', 'Owner', 'Not listed', 'Cosmetic repairs',
        'Single family', '5-9 years', 'sample-apn-003'
 FROM leads WHERE ghl_id = 'sample-ghl-003'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO properties (
-    lead_id, address, city, county, state, zip, estimated_value, situation,
+    lead_id, address, city, county, county_resolution_method, county_resolution_confidence,
+    state, zip, estimated_value, situation,
     occupancy, selling_urgency, seller_type, listing_status, repair_scope,
     property_type, years_owned, apn
 )
-SELECT id, '77 Beaver Ruin Rd', 'Norcross', 'Gwinnett', 'GA', '30071', 305000, 'deferred-maintenance',
+SELECT id, '77 Beaver Ruin Rd', 'Norcross', 'Gwinnett', 'provider', 100,
+       'GA', '30071', 305000, 'deferred-maintenance',
        'Tenant occupied', '60-90 days', 'Owner', 'Not listed', 'Major remodel',
        'Single family', '15-19 years', 'sample-apn-004'
 FROM leads WHERE ghl_id = 'sample-ghl-004'
