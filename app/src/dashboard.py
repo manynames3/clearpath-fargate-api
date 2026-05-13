@@ -47,6 +47,15 @@ async def dashboard():
     h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: 0; }
     h2 { margin: 0 0 12px; font-size: 15px; font-weight: 700; letter-spacing: 0; }
     main { padding: 20px 24px 28px; max-width: 1440px; margin: 0 auto; }
+    .site-footer {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 24px 22px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
     .toolbar { display: flex; align-items: center; gap: 8px; }
     input {
       height: 36px;
@@ -137,6 +146,7 @@ async def dashboard():
     }
     @media (max-width: 560px) {
       main { padding: 14px; }
+      .site-footer { padding: 0 14px 18px; }
       .grid { grid-template-columns: 1fr; }
       .score-card { grid-template-columns: 48px 1fr; }
       .score-card .pill { grid-column: 2; width: max-content; }
@@ -177,6 +187,7 @@ async def dashboard():
       </div>
     </section>
   </main>
+  <footer class="site-footer">©2026 SUPREME AI VENTURES LLC</footer>
   <script>
     const apiKeyInput = document.getElementById("apiKey");
     const statusNode = document.getElementById("status");
