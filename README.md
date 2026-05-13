@@ -79,6 +79,7 @@ Use [docs/troubleshooting.md](docs/troubleshooting.md) for validation troublesho
 Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel-ready webhook receiver, setup requirements, and payload mapping.
+Use [docs/lead-scoring.md](docs/lead-scoring.md) for the rule-based scoring model, provider field mapping, and CSV backfill path.
 Use [docs/github-deploy-setup.md](docs/github-deploy-setup.md) for the manual GitHub Actions image deployment path.
 Use [docs/terraform-backend.md](docs/terraform-backend.md) before moving from local state to remote Terraform state.
 See [docs/test-results.md](docs/test-results.md) for the latest local validation summary and deployed CloudFront smoke artifact.

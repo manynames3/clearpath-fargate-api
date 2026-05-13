@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import re
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy import func, or_, select
@@ -72,52 +73,225 @@ async def _get_or_create_source(session: AsyncSession, source_name: str | None) 
     return source
 
 
+STATE_ABBREVIATIONS = {
+    "alabama": "AL",
+    "alaska": "AK",
+    "arizona": "AZ",
+    "arkansas": "AR",
+    "california": "CA",
+    "colorado": "CO",
+    "connecticut": "CT",
+    "delaware": "DE",
+    "florida": "FL",
+    "georgia": "GA",
+    "hawaii": "HI",
+    "idaho": "ID",
+    "illinois": "IL",
+    "indiana": "IN",
+    "iowa": "IA",
+    "kansas": "KS",
+    "kentucky": "KY",
+    "louisiana": "LA",
+    "maine": "ME",
+    "maryland": "MD",
+    "massachusetts": "MA",
+    "michigan": "MI",
+    "minnesota": "MN",
+    "mississippi": "MS",
+    "missouri": "MO",
+    "montana": "MT",
+    "nebraska": "NE",
+    "nevada": "NV",
+    "new hampshire": "NH",
+    "new jersey": "NJ",
+    "new mexico": "NM",
+    "new york": "NY",
+    "north carolina": "NC",
+    "north dakota": "ND",
+    "ohio": "OH",
+    "oklahoma": "OK",
+    "oregon": "OR",
+    "pennsylvania": "PA",
+    "rhode island": "RI",
+    "south carolina": "SC",
+    "south dakota": "SD",
+    "tennessee": "TN",
+    "texas": "TX",
+    "utah": "UT",
+    "vermont": "VT",
+    "virginia": "VA",
+    "washington": "WA",
+    "west virginia": "WV",
+    "wisconsin": "WI",
+    "wyoming": "WY",
+}
+
+
+def _text(value) -> str | None:
+    if value in (None, ""):
+        return None
+    return str(value).strip() or None
+
+
+def _field(fields: dict, *keys: str) -> str | None:
+    for key in keys:
+        value = _text(fields.get(key))
+        if value:
+            return value
+    return None
+
+
+def _normalize_state(value) -> str:
+    state = (_text(value) or "GA").strip()
+    if len(state) == 2:
+        return state.upper()
+    return STATE_ABBREVIATIONS.get(state.lower(), state[:2].upper())
+
+
+def _zip_from_address(address: str | None) -> str | None:
+    if not address:
+        return None
+    match = re.search(r"\b(\d{5})(?:-\d{4})?\b", address)
+    return match.group(1) if match else None
+
+
+def _has_any(value: str | None, *needles: str) -> bool:
+    text = (value or "").lower()
+    return any(needle in text for needle in needles)
+
+
+def _max_number(value: str | None) -> int | None:
+    numbers = [int(match) for match in re.findall(r"\d+", value or "")]
+    return max(numbers) if numbers else None
+
+
 def _score_lead(lead: Lead, prop: Property | None, has_duplicate: bool) -> tuple[int, str, list[str], bool]:
-    score = 45
+    score = 35
     reasons: list[str] = []
+    review_flag = False
 
     status_bonus = {
-        "closed": 35,
-        "hot": 25,
-        "warm": 15,
-        "new": 5,
+        "closed": 30,
+        "hot": 20,
+        "warm": 10,
+        "new": 0,
         "dead": -25,
     }.get((lead.status or "new").lower(), 0)
     score += status_bonus
     reasons.append(f"Status is {lead.status or 'new'}")
 
-    if lead.phone:
-        score += 5
-        reasons.append("Phone present")
-    if lead.email:
-        score += 3
-        reasons.append("Email present")
-    if prop and prop.address:
-        score += 10
-        reasons.append("Property address present")
+    if not lead.phone:
+        score -= 10
+        review_flag = True
+        reasons.append("Missing seller phone")
+    if not (prop and prop.address):
+        score -= 15
+        review_flag = True
+        reasons.append("Missing property address")
     if lead.county:
-        score += 5
+        score += 4
         reasons.append(f"County captured: {lead.county}")
+    if prop and prop.zip:
+        score += 4
+        reasons.append(f"ZIP captured: {prop.zip}")
 
     situation = (prop.situation if prop else None) or ""
-    situation_bonus = {
-        "inherited": 12,
-        "vacant": 10,
-        "tax-delinquent": 12,
-        "tired landlord": 8,
-    }.get(situation.lower(), 0)
+    situation_bonus = 0
+    if _has_any(situation, "inherited", "probate"):
+        situation_bonus = 14
+    elif _has_any(situation, "tax", "delinquent"):
+        situation_bonus = 12
+    elif _has_any(situation, "foreclosure", "preforeclosure"):
+        situation_bonus = 14
+    elif _has_any(situation, "divorce"):
+        situation_bonus = 10
+    elif _has_any(situation, "tired landlord"):
+        situation_bonus = 8
     if situation_bonus:
         score += situation_bonus
         reasons.append(f"Motivation signal: {situation}")
 
-    needs_review = score >= 70
+    occupancy = prop.occupancy if prop else None
+    if _has_any(occupancy, "vacant"):
+        score += 12
+        reasons.append("Property is vacant")
+    elif _has_any(occupancy, "tenant", "renter"):
+        score += 4
+        reasons.append("Tenant-occupied property")
+
+    urgency = prop.selling_urgency if prop else None
+    if _has_any(urgency, "asap", "urgent", "immediate", "now"):
+        score += 18
+        reasons.append(f"Urgency signal: {urgency}")
+    elif _has_any(urgency, "soon", "30"):
+        score += 10
+        reasons.append(f"Near-term urgency: {urgency}")
+    elif _has_any(urgency, "60", "90"):
+        score += 4
+        reasons.append(f"Medium-term urgency: {urgency}")
+    elif _has_any(urgency, "no rush", "not urgent"):
+        score -= 5
+        reasons.append(f"Low urgency: {urgency}")
+
+    seller_type = prop.seller_type if prop else None
+    if _has_any(seller_type, "owner"):
+        score += 8
+        reasons.append("Seller is owner")
+    elif _has_any(seller_type, "agent", "realtor", "wholesaler"):
+        score -= 12
+        review_flag = True
+        reasons.append(f"Non-owner seller type: {seller_type}")
+
+    listing_status = prop.listing_status if prop else None
+    if _has_any(listing_status, "not listed", "off market"):
+        score += 10
+        reasons.append("Property is not listed")
+    elif _has_any(listing_status, "listed", "mls", "under contract", "pending"):
+        score -= 16
+        review_flag = True
+        reasons.append(f"Listing status needs review: {listing_status}")
+
+    repair_scope = prop.repair_scope if prop else None
+    if _has_any(repair_scope, "major", "roof", "kitchen", "bathroom", "foundation", "remodel"):
+        score += 10
+        reasons.append(f"Repair scope: {repair_scope}")
+    elif _has_any(repair_scope, "repair", "deferred"):
+        score += 8
+        reasons.append(f"Repair need: {repair_scope}")
+    elif _has_any(repair_scope, "cosmetic"):
+        score += 4
+        reasons.append(f"Cosmetic repair scope: {repair_scope}")
+    elif _has_any(repair_scope, "turnkey", "move in"):
+        score -= 4
+        reasons.append(f"Limited distress signal: {repair_scope}")
+
+    property_type = prop.property_type if prop else None
+    if _has_any(property_type, "single family", "sfr"):
+        score += 6
+        reasons.append("Single-family property")
+    elif _has_any(property_type, "land", "mobile", "condo", "townhome"):
+        score -= 4
+        reasons.append(f"Property type needs review: {property_type}")
+
+    years_owned = _max_number(prop.years_owned if prop else None)
+    if years_owned and years_owned >= 15:
+        score += 7
+        reasons.append(f"Long ownership: {prop.years_owned}")
+    elif years_owned and years_owned >= 10:
+        score += 5
+        reasons.append(f"Established ownership: {prop.years_owned}")
+    elif years_owned and years_owned >= 5:
+        score += 3
+        reasons.append(f"Ownership history: {prop.years_owned}")
+
+    needs_review = score >= 70 or review_flag
     if has_duplicate:
         score -= 20
         needs_review = True
         reasons.append("Possible duplicate lead")
 
     score = max(0, min(100, score))
-    if has_duplicate:
+    if has_duplicate or review_flag:
         priority = "review"
     elif score >= 80:
         priority = "high"
@@ -205,18 +379,12 @@ async def _record_duplicate_matches(session: AsyncSession, lead: Lead, prop: Pro
     return has_duplicate
 
 
-@router.post("/ghl")
-async def receive_ghl_webhook(
-    request: Request,
-    x_clearpath_signature: str | None = Header(default=None),
-    x_clearpath_webhook_secret: str | None = Header(default=None),
-    authorization: str | None = Header(default=None),
-    session: AsyncSession = Depends(get_session),
-):
-    body = await request.body()
-    _verify_signature(body, x_clearpath_signature, x_clearpath_webhook_secret, authorization)
-    payload = GHLWebhookPayload.model_validate_json(body)
-    raw_payload = json.loads(body)
+async def upsert_lead_from_payload(
+    session: AsyncSession,
+    payload: GHLWebhookPayload,
+    raw_payload: dict,
+    provider: str = "gohighlevel",
+) -> Lead:
     fields = payload.custom_fields
 
     result = await session.execute(select(Lead).where(Lead.ghl_id == payload.contact_id))
@@ -233,29 +401,37 @@ async def receive_ghl_webhook(
     lead.email = payload.email
     lead.status = payload.status or "new"
     lead.source = payload.source
-    lead.county = str(fields.get("county") or "") or None
-    lead.state = str(fields.get("state") or "GA")
+    lead.county = _field(fields, "county")
+    lead.state = _normalize_state(_field(fields, "state"))
 
     await session.flush()
 
     prop = None
-    address = fields.get("property_address")
+    address = _field(fields, "property_address", "address")
     if address:
         property_result = await session.execute(select(Property).where(Property.lead_id == lead.id).limit(1))
         prop = property_result.scalar_one_or_none()
         if prop is None:
             prop = Property(lead_id=lead.id)
             session.add(prop)
-        prop.address = str(address)
-        prop.city = str(fields.get("city") or "") or None
+        prop.address = address
+        prop.city = _field(fields, "city")
         prop.county = lead.county
         prop.state = lead.state
-        prop.zip = str(fields.get("zip") or "") or None
-        prop.situation = str(fields.get("situation") or "") or None
+        prop.zip = _field(fields, "zip") or _zip_from_address(address)
+        prop.situation = _field(fields, "situation")
+        prop.occupancy = _field(fields, "occupancy")
+        prop.selling_urgency = _field(fields, "selling_urgency")
+        prop.seller_type = _field(fields, "seller_type")
+        prop.listing_status = _field(fields, "listing_status")
+        prop.repair_scope = _field(fields, "repair_scope")
+        prop.property_type = _field(fields, "property_type")
+        prop.years_owned = _field(fields, "years_owned")
+        prop.apn = _field(fields, "apn")
 
     session.add(
         WebhookEvent(
-            provider="gohighlevel",
+            provider=provider,
             external_id=payload.contact_id,
             lead_id=lead.id,
             event_type="contact",
@@ -264,6 +440,22 @@ async def receive_ghl_webhook(
     )
     has_duplicate = await _record_duplicate_matches(session, lead, prop)
     await _upsert_lead_score(session, lead, prop, has_duplicate)
+    return lead
+
+
+@router.post("/ghl")
+async def receive_ghl_webhook(
+    request: Request,
+    x_clearpath_signature: str | None = Header(default=None),
+    x_clearpath_webhook_secret: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+    session: AsyncSession = Depends(get_session),
+):
+    body = await request.body()
+    _verify_signature(body, x_clearpath_signature, x_clearpath_webhook_secret, authorization)
+    payload = GHLWebhookPayload.model_validate_json(body)
+    raw_payload = json.loads(body)
+    lead = await upsert_lead_from_payload(session, payload, raw_payload)
 
     await session.commit()
     return {"status": "accepted", "lead_id": lead.id}

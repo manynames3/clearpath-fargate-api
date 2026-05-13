@@ -116,6 +116,19 @@ Field mapping:
 | `custom_fields.state` | `leads.state`, `properties.state` |
 | `custom_fields.zip` | `properties.zip` |
 | `custom_fields.situation` | `properties.situation` |
+| `Standard Seller Number` | `leads.phone` |
+| `E-mail (entered by seller)` | `leads.email` |
+| `Who's living in the property?` | `properties.occupancy` |
+| `Selling urgency` | `properties.selling_urgency` |
+| `Seller motivation` | `properties.situation` |
+| `Seller: owner or agent?` | `properties.seller_type` |
+| `Listing status` | `properties.listing_status` |
+| `Repair scope` | `properties.repair_scope` |
+| `Property type` | `properties.property_type` |
+| `Years of ownership` | `properties.years_owned` |
+| `APN` | `properties.apn` |
+
+State names such as `Georgia` are normalized to `GA` before storage.
 
 On successful ingestion, the API also writes:
 

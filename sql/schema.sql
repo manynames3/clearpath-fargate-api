@@ -36,6 +36,14 @@ CREATE TABLE IF NOT EXISTS properties (
     zip             VARCHAR(10),
     estimated_value INTEGER,
     situation       VARCHAR(100),
+    occupancy       VARCHAR(100),
+    selling_urgency VARCHAR(100),
+    seller_type     VARCHAR(100),
+    listing_status  VARCHAR(100),
+    repair_scope    VARCHAR(255),
+    property_type   VARCHAR(100),
+    years_owned     VARCHAR(100),
+    apn             VARCHAR(100),
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 

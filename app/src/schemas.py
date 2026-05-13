@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import re
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -15,8 +16,39 @@ def _normalize_custom_fields(value) -> dict[str, str | int | None]:
     if value is None:
         return {}
 
+    def canonical_key(key: str) -> str:
+        normalized = re.sub(r"[^a-z0-9]+", "_", key.lower()).strip("_")
+        aliases = {
+            "e_mail_entered_by_seller": "email",
+            "standard_seller_number": "phone",
+            "property_address": "property_address",
+            "zip_code": "zip",
+            "zipcode": "zip",
+            "postal_code": "zip",
+            "who_s_living_in_the_property": "occupancy",
+            "whos_living_in_the_property": "occupancy",
+            "seller_motivation": "situation",
+            "seller_owner_or_agent": "seller_type",
+            "seller_owner_agent": "seller_type",
+            "listing_status": "listing_status",
+            "selling_urgency": "selling_urgency",
+            "conversation_notes": "conversation_notes",
+            "repair_scope": "repair_scope",
+            "property_type": "property_type",
+            "square_footage": "square_footage",
+            "year_built": "year_built",
+            "years_of_ownership": "years_owned",
+            "years_ownership": "years_owned",
+            "lot_size": "lot_size",
+        }
+        return aliases.get(normalized, normalized)
+
     if isinstance(value, dict):
-        return value
+        fields = {}
+        for key, field_value in value.items():
+            fields[str(key)] = field_value
+            fields.setdefault(canonical_key(str(key)), field_value)
+        return fields
 
     if not isinstance(value, list):
         return {}
@@ -30,6 +62,7 @@ def _normalize_custom_fields(value) -> dict[str, str | int | None]:
         field_value = _first_present(item, "value", "field_value", "fieldValue")
         if key and field_value is not None:
             fields[str(key)] = field_value
+            fields.setdefault(canonical_key(str(key)), field_value)
 
     return fields
 
@@ -60,8 +93,16 @@ class GHLWebhookPayload(BaseModel):
             "city": data.get("city"),
             "county": data.get("county"),
             "state": data.get("state"),
-            "zip": _first_present(data, "zip", "postalCode"),
+            "zip": _first_present(data, "zip", "zip_code", "zipCode", "postalCode"),
             "situation": data.get("situation"),
+            "occupancy": data.get("occupancy"),
+            "selling_urgency": _first_present(data, "selling_urgency", "sellingUrgency"),
+            "seller_type": _first_present(data, "seller_type", "sellerType"),
+            "listing_status": _first_present(data, "listing_status", "listingStatus"),
+            "repair_scope": _first_present(data, "repair_scope", "repairScope"),
+            "property_type": _first_present(data, "property_type", "propertyType"),
+            "years_owned": _first_present(data, "years_owned", "yearsOwned"),
+            "apn": _first_present(data, "apn", "APN"),
         }
         for key, value in top_level_property_fields.items():
             if value not in (None, "") and key not in fields:
@@ -69,10 +110,14 @@ class GHLWebhookPayload(BaseModel):
 
         return {
             "contact_id": _first_present(data, "contact_id", "contactId", "id") or _first_present(contact, "id"),
-            "first_name": _first_present(data, "first_name", "firstName") or _first_present(contact, "first_name", "firstName"),
-            "last_name": _first_present(data, "last_name", "lastName") or _first_present(contact, "last_name", "lastName"),
-            "phone": data.get("phone") or contact.get("phone"),
-            "email": data.get("email") or contact.get("email"),
+            "first_name": _first_present(data, "first_name", "firstName")
+            or _first_present(contact, "first_name", "firstName")
+            or fields.get("first_name"),
+            "last_name": _first_present(data, "last_name", "lastName")
+            or _first_present(contact, "last_name", "lastName")
+            or fields.get("last_name"),
+            "phone": data.get("phone") or contact.get("phone") or fields.get("phone"),
+            "email": data.get("email") or contact.get("email") or fields.get("email"),
             "source": data.get("source") or contact.get("source"),
             "status": data.get("status") or contact.get("status") or "new",
             "custom_fields": fields,
@@ -87,6 +132,14 @@ class PropertyResponse(BaseModel):
     zip: str | None = None
     estimated_value: int | None = None
     situation: str | None = None
+    occupancy: str | None = None
+    selling_urgency: str | None = None
+    seller_type: str | None = None
+    listing_status: str | None = None
+    repair_scope: str | None = None
+    property_type: str | None = None
+    years_owned: str | None = None
+    apn: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

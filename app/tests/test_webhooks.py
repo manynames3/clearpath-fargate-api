@@ -2,7 +2,11 @@ import hashlib
 import hmac
 import json
 
+from sqlalchemy import select
+
 from src.config import get_settings
+from src.database import get_session_factory
+from src.models import Lead, LeadScore, Property
 
 
 async def test_ghl_webhook_upserts_lead_and_property(client):
@@ -61,6 +65,61 @@ async def test_ghl_webhook_accepts_highlevel_contact_payload(client):
     assert body["count"] == 1
     assert body["leads"][0]["ghl_id"] == "contact-789"
     assert body["leads"][0]["property"]["address"] == "88 Peachtree Ave"
+
+
+async def test_ghl_webhook_maps_provider_detail_fields_into_score(client):
+    response = await client.post(
+        "/webhooks/ghl",
+        json={
+            "id": "provider-lead-001",
+            "source": "main-lead-provider",
+            "customFields": [
+                {"key": "First Name", "field_value": "Lynton"},
+                {"key": "Last Name", "field_value": "Odom"},
+                {"key": "Standard Seller Number", "field_value": "+18133106902"},
+                {"key": "E-mail (entered by seller)", "field_value": "seller@example.com"},
+                {"key": "Property Address", "field_value": "204 Carroll Dr, Warner Robins, GA 31093"},
+                {"key": "City", "field_value": "warner robins"},
+                {"key": "State", "field_value": "Georgia"},
+                {"key": "Who's living in the property?", "field_value": "Vacant"},
+                {"key": "Selling urgency", "field_value": "ASAP"},
+                {"key": "Seller motivation", "field_value": "Inherited property"},
+                {"key": "Seller: owner or agent?", "field_value": "Owner"},
+                {"key": "Listing status", "field_value": "Not listed"},
+                {"key": "APN", "field_value": "0W020L 062000"},
+                {"key": "Repair scope", "field_value": "Major remodel: kitchen, bathroom, roof, etc."},
+                {"key": "ZIP code", "field_value": "31093"},
+                {"key": "Property type", "field_value": "Single family"},
+                {"key": "Years of ownership", "field_value": "15-19 years"},
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+
+    async with get_session_factory()() as session:
+        stored_lead = (await session.execute(select(Lead).where(Lead.ghl_id == "provider-lead-001"))).scalar_one_or_none()
+        assert stored_lead is not None
+        assert stored_lead.first_name == "Lynton"
+        assert stored_lead.phone == "+18133106902"
+        assert stored_lead.email == "seller@example.com"
+        assert stored_lead.state == "GA"
+
+        prop = (await session.execute(select(Property).where(Property.lead_id == stored_lead.id))).scalar_one_or_none()
+        assert prop is not None
+        assert prop.occupancy == "Vacant"
+        assert prop.selling_urgency == "ASAP"
+        assert prop.seller_type == "Owner"
+        assert prop.listing_status == "Not listed"
+        assert prop.repair_scope.startswith("Major remodel")
+        assert prop.property_type == "Single family"
+        assert prop.years_owned == "15-19 years"
+
+        score = (await session.execute(select(LeadScore).where(LeadScore.lead_id == stored_lead.id))).scalar_one_or_none()
+        assert score is not None
+        assert score.score >= 90
+        assert "Urgency signal: ASAP" in score.reasons
+        assert "Property is vacant" in score.reasons
 
 
 async def test_ghl_webhook_validates_shared_secret_signature(client, monkeypatch):
