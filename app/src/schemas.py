@@ -40,6 +40,14 @@ def _normalize_custom_fields(value) -> dict[str, str | int | None]:
             "years_of_ownership": "years_owned",
             "years_ownership": "years_owned",
             "lot_size": "lot_size",
+            "type_of_property": "property_type",
+            "what_kind_of_repairs_and_maintenance_does_the_property_need": "repair_scope",
+            "how_fast_they_want_to_sell": "selling_urgency",
+            "how_long_have_you_owned_the_property_in_years": "years_owned",
+            "anyone_living_in_the_house": "occupancy",
+            "owner_or_agent_wholesaler": "seller_type",
+            "is_your_property_listed_with_a_real_estate_agent": "listing_status",
+            "sold_comps": "estimated_value",
         }
         return aliases.get(normalized, normalized)
 

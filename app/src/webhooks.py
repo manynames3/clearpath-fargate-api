@@ -8,7 +8,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import fetch_secret_string, get_settings
-from src.county_resolver import resolve_county
+from src.county_resolver import normalize_zip, resolve_county
 from src.database import get_session
 from src.models import DuplicateLead, Lead, LeadScore, LeadSource, Property, WebhookEvent
 from src.schemas import GHLWebhookPayload
@@ -164,6 +164,21 @@ def _has_any(value: str | None, *needles: str) -> bool:
 def _max_number(value: str | None) -> int | None:
     numbers = [int(match) for match in re.findall(r"\d+", value or "")]
     return max(numbers) if numbers else None
+
+
+def _int_field(fields: dict, *keys: str) -> int | None:
+    for key in keys:
+        value = _field(fields, key)
+        if not value:
+            continue
+        normalized = re.sub(r"[^0-9.]+", "", value)
+        if not normalized:
+            continue
+        try:
+            return int(float(normalized))
+        except ValueError:
+            continue
+    return None
 
 
 def _score_lead(lead: Lead, prop: Property | None, has_duplicate: bool) -> tuple[int, str, list[str], bool]:
@@ -423,7 +438,8 @@ async def upsert_lead_from_payload(
         prop.address = address
         prop.city = _field(fields, "city")
         prop.state = lead.state
-        prop.zip = _field(fields, "zip") or _zip_from_address(address)
+        prop.zip = normalize_zip(_field(fields, "zip") or _zip_from_address(address))
+        prop.estimated_value = _int_field(fields, "estimated_value", "sold_comps")
         prop.situation = _field(fields, "situation")
         prop.occupancy = _field(fields, "occupancy")
         prop.selling_urgency = _field(fields, "selling_urgency")
@@ -449,15 +465,27 @@ async def upsert_lead_from_payload(
         prop.county_resolution_method = resolution.method
         prop.county_resolution_confidence = resolution.confidence
 
-    session.add(
-        WebhookEvent(
-            provider=provider,
-            external_id=payload.contact_id,
-            lead_id=lead.id,
-            event_type="contact",
-            payload=raw_payload,
+    should_record_event = True
+    if provider == "csv-backfill":
+        existing_event = await session.execute(
+            select(WebhookEvent).where(
+                WebhookEvent.provider == provider,
+                WebhookEvent.external_id == payload.contact_id,
+                WebhookEvent.event_type == "contact",
+            )
         )
-    )
+        should_record_event = existing_event.scalar_one_or_none() is None
+
+    if should_record_event:
+        session.add(
+            WebhookEvent(
+                provider=provider,
+                external_id=payload.contact_id,
+                lead_id=lead.id,
+                event_type="contact",
+                payload=raw_payload,
+            )
+        )
     has_duplicate = await _record_duplicate_matches(session, lead, prop)
     await _upsert_lead_score(session, lead, prop, has_duplicate)
     return lead

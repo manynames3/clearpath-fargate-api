@@ -119,13 +119,21 @@ Field mapping:
 | `Standard Seller Number` | `leads.phone` |
 | `E-mail (entered by seller)` | `leads.email` |
 | `Who's living in the property?` | `properties.occupancy` |
+| `Anyone living in the house?` | `properties.occupancy` |
 | `Selling urgency` | `properties.selling_urgency` |
+| `How fast they want to sell` | `properties.selling_urgency` |
 | `Seller motivation` | `properties.situation` |
 | `Seller: owner or agent?` | `properties.seller_type` |
+| `Owner or Agent/Wholesaler?` | `properties.seller_type` |
 | `Listing status` | `properties.listing_status` |
+| `Is your property listed with a real estate agent?` | `properties.listing_status` |
 | `Repair scope` | `properties.repair_scope` |
+| `What kind of repairs and maintenance does the property NEED?` | `properties.repair_scope` |
 | `Property type` | `properties.property_type` |
+| `Type of Property` | `properties.property_type` |
 | `Years of ownership` | `properties.years_owned` |
+| `How long have you owned the property in years?` | `properties.years_owned` |
+| `Sold comps` | `properties.estimated_value` |
 | `APN` | `properties.apn` |
 
 State names such as `Georgia` are normalized to `GA` before storage. If the lead provider

@@ -6,7 +6,9 @@ from sqlalchemy import select
 
 from src.config import get_settings
 from src.database import get_session_factory
-from src.models import Lead, LeadScore, Property
+from src.models import Lead, LeadScore, Property, WebhookEvent
+from src.schemas import GHLWebhookPayload
+from src.webhooks import upsert_lead_from_payload
 
 
 async def test_ghl_webhook_upserts_lead_and_property(client):
@@ -124,6 +126,83 @@ async def test_ghl_webhook_maps_provider_detail_fields_into_score(client):
         assert score.score >= 90
         assert "Urgency signal: ASAP" in score.reasons
         assert "Property is vacant" in score.reasons
+
+
+async def test_ghl_webhook_maps_istl_export_columns(client):
+    response = await client.post(
+        "/webhooks/ghl",
+        json={
+            "id": "istl-export-001",
+            "source": "ISTL Leads 2",
+            "customFields": [
+                {"key": "First Name", "field_value": "Sample"},
+                {"key": "Last Name", "field_value": "Lead"},
+                {"key": "Phone", "field_value": "+14045550123"},
+                {"key": "Email", "field_value": "sample@example.com"},
+                {"key": "Property Address", "field_value": "123 Main St, Lawrenceville, GA 30043"},
+                {"key": "City", "field_value": "Lawrenceville"},
+                {"key": "State", "field_value": "Georgia"},
+                {"key": "County", "field_value": "Gwinnett"},
+                {"key": "ZIP code", "field_value": "30043.0"},
+                {"key": "Sold comps", "field_value": "288000.0"},
+                {"key": "Seller motivation", "field_value": "Selling a vacant/non-occupied property"},
+                {"key": "Type of Property", "field_value": "Single family"},
+                {
+                    "key": "What kind of repairs and maintenance does the property NEED?",
+                    "field_value": "Remodel - Kitchen, Bathroom, Roof",
+                },
+                {"key": "How fast they want to sell", "field_value": "ASAP"},
+                {"key": "How long have you owned the property in years?", "field_value": "20-29"},
+                {"key": "Anyone living in the house?", "field_value": "No its Vacant"},
+                {"key": "Owner or Agent/Wholesaler?", "field_value": "Yes, i own this property"},
+                {"key": "Is your property listed with a real estate agent?", "field_value": "No it's not listed"},
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+
+    async with get_session_factory()() as session:
+        stored_lead = (await session.execute(select(Lead).where(Lead.ghl_id == "istl-export-001"))).scalar_one()
+        prop = (await session.execute(select(Property).where(Property.lead_id == stored_lead.id))).scalar_one()
+        assert stored_lead.county == "Gwinnett"
+        assert prop.zip == "30043"
+        assert prop.estimated_value == 288000
+        assert prop.situation == "Selling a vacant/non-occupied property"
+        assert prop.property_type == "Single family"
+        assert prop.repair_scope == "Remodel - Kitchen, Bathroom, Roof"
+        assert prop.selling_urgency == "ASAP"
+        assert prop.years_owned == "20-29"
+        assert prop.occupancy == "No its Vacant"
+        assert prop.seller_type == "Yes, i own this property"
+        assert prop.listing_status == "No it's not listed"
+
+        score = (await session.execute(select(LeadScore).where(LeadScore.lead_id == stored_lead.id))).scalar_one()
+        assert score.score >= 90
+        assert "Urgency signal: ASAP" in score.reasons
+
+
+async def test_csv_backfill_event_logging_is_idempotent(client):
+    payload = {
+        "id": "csv-backfill-001",
+        "source": "ISTL Leads 2",
+        "customFields": [
+            {"key": "First Name", "field_value": "Sample"},
+            {"key": "Property Address", "field_value": "123 Main St, Lawrenceville, GA 30043"},
+            {"key": "County", "field_value": "Gwinnett"},
+        ],
+    }
+
+    async with get_session_factory()() as session:
+        parsed = GHLWebhookPayload.model_validate(payload)
+        await upsert_lead_from_payload(session, parsed, payload, provider="csv-backfill")
+        await upsert_lead_from_payload(session, parsed, payload, provider="csv-backfill")
+        await session.commit()
+
+        events = (
+            await session.execute(select(WebhookEvent).where(WebhookEvent.provider == "csv-backfill"))
+        ).scalars().all()
+        assert len(events) == 1
 
 
 async def test_ghl_webhook_validates_shared_secret_signature(client, monkeypatch):
