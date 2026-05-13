@@ -196,14 +196,6 @@ def _score_lead(lead: Lead, prop: Property | None, has_duplicate: bool) -> tuple
     score += status_bonus
     reasons.append(f"Status is {lead.status or 'new'}")
 
-    if not lead.phone:
-        score -= 10
-        review_flag = True
-        reasons.append("Missing seller phone")
-    if not (prop and prop.address):
-        score -= 15
-        review_flag = True
-        reasons.append("Missing property address")
     if lead.county:
         score += 4
         if prop and prop.county_resolution_method and prop.county_resolution_method != "provider":

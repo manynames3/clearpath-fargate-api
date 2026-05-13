@@ -6,9 +6,9 @@ fields into a consistent review queue and source-quality report.
 
 ## What The Score Uses
 
-Basic contact completeness is treated as a data-quality gate, not a major score driver.
-Most paid leads already include phone, email, and property address, so those fields do not
-differentiate one lead from another.
+Basic contact completeness is not part of the lead score. The paid-lead provider is
+expected to send phone, email, and property address on every row, so those fields are
+treated as ingestion requirements rather than scoring differentiators.
 
 The score is driven by fields that affect acquisition priority:
 
