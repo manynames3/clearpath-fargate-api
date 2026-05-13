@@ -32,7 +32,7 @@ Keep the live window focused on evidence, not extra build work:
 - Trigger GitHub Actions `Build and Deploy` manually with `deploy=true`.
 - Capture ECS service health, task health, ALB target health, RDS Proxy target health, CloudFront deployed status, and WAF attachment.
 - Run API smoke tests through `api_base_url`, including `/health`, `/ready`, a GHL-style test payload to `/webhooks/ghl`, protected `/api/leads`, `/api/intelligence/summary`, `/api/intelligence/source-performance`, `/api/intelligence/lead-scores?needs_review=true`, and `/api/market/gwinnett`.
-- Open `/dashboard` through `api_base_url` and capture the internal source scorecard, duplicate alerts, lead scores, and county performance view.
+- Open `/dashboard` through `api_base_url` and capture the internal source scorecard, provider quality signals, lead scores, and county performance view.
 - If a real GoHighLevel account is available, add the Clearpath Custom Webhook action to the existing paid-lead intake workflow and capture the workflow delivery log. Otherwise, document the endpoint as GHL-ready but not externally connected.
 - Capture CloudFront cache headers on the second market endpoint request.
 - Run `make deployment-evidence` to save read-only AWS CLI output.
@@ -65,7 +65,7 @@ After apply, capture:
 - GHL-style webhook receiver test returning `{"status":"accepted"}` and creating a lead
 - optional real GoHighLevel workflow delivery log from the paid-lead intake workflow, if a GHL account/location was connected during the validation window
 - protected `/api/leads` response using `X-Clearpath-API-Key`
-- protected `/api/intelligence/summary` response showing lead/source/duplicate/review totals
+- protected `/api/intelligence/summary` response showing lead/source/review totals and recent webhook events
 - protected `/api/intelligence/source-performance` response showing source/vendor scorecard data
 - protected `/api/intelligence/lead-scores?needs_review=true` response showing score reasons
 - `/dashboard` screenshot showing the end-user product surface

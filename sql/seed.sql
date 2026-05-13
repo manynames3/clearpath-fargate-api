@@ -10,7 +10,7 @@ VALUES
     ('sample-ghl-001', 'John', 'Smith', '+14045550100', 'john.smith@example.com', 'warm', 'paid-lead-vendor-a', 'Gwinnett', 'GA'),
     ('sample-ghl-002', 'Maria', 'Johnson', '+16785550125', 'maria.johnson@example.com', 'hot', 'facebook', 'Cobb', 'GA'),
     ('sample-ghl-003', 'Angela', 'Brown', '+17705550199', 'angela.brown@example.com', 'new', 'direct', 'Fulton', 'GA'),
-    ('sample-ghl-004', 'John', 'S.', '+14045550100', 'john.alt@example.com', 'warm', 'paid-lead-vendor-a', 'Gwinnett', 'GA')
+    ('sample-ghl-004', 'Caleb', 'Ward', '+14045550104', 'caleb.ward@example.com', 'warm', 'paid-lead-vendor-a', 'Gwinnett', 'GA')
 ON CONFLICT (ghl_id) DO NOTHING;
 
 UPDATE leads
@@ -30,7 +30,7 @@ FROM leads WHERE ghl_id = 'sample-ghl-002'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO properties (lead_id, address, city, county, state, zip, estimated_value, situation)
-SELECT id, '123 Main St', 'Lawrenceville', 'Gwinnett', 'GA', '30046', 285000, 'inherited'
+SELECT id, '77 Beaver Ruin Rd', 'Norcross', 'Gwinnett', 'GA', '30071', 305000, 'deferred-maintenance'
 FROM leads WHERE ghl_id = 'sample-ghl-004'
 ON CONFLICT DO NOTHING;
 
@@ -55,16 +55,9 @@ FROM leads WHERE ghl_id = 'sample-ghl-003'
 ON CONFLICT (lead_id) DO UPDATE SET score = EXCLUDED.score, priority = EXCLUDED.priority, reasons = EXCLUDED.reasons, needs_review = EXCLUDED.needs_review;
 
 INSERT INTO lead_scores (lead_id, score, priority, reasons, needs_review)
-SELECT id, 58, 'review', '["Status is warm", "Possible duplicate lead", "Property address present"]'::jsonb, TRUE
+SELECT id, 66, 'review', '["Status is warm", "Provider quality needs review", "Property address present"]'::jsonb, TRUE
 FROM leads WHERE ghl_id = 'sample-ghl-004'
 ON CONFLICT (lead_id) DO UPDATE SET score = EXCLUDED.score, priority = EXCLUDED.priority, reasons = EXCLUDED.reasons, needs_review = EXCLUDED.needs_review;
-
-INSERT INTO duplicate_leads (lead_id, duplicate_lead_id, match_type, confidence, reason)
-SELECT new_lead.id, existing_lead.id, 'phone', 95, 'Phone number matches an existing paid lead'
-FROM leads new_lead
-JOIN leads existing_lead ON existing_lead.ghl_id = 'sample-ghl-001'
-WHERE new_lead.ghl_id = 'sample-ghl-004'
-ON CONFLICT (lead_id, duplicate_lead_id, match_type) DO NOTHING;
 
 INSERT INTO webhook_events (provider, external_id, lead_id, event_type, payload)
 SELECT 'gohighlevel', ghl_id, id, 'contact', jsonb_build_object('contact_id', ghl_id, 'source', source)

@@ -6,7 +6,7 @@ Status: Accepted
 
 ## Context
 
-GoHighLevel already owns the CRM workflow: pipeline stages, follow-up sequences, notifications, and the existing Notion handoff. The missing capability is paid-lead intelligence: source performance, duplicate detection, explainable lead scoring, county trends, and market context.
+GoHighLevel already owns the CRM workflow: pipeline stages, follow-up sequences, notifications, and the existing Notion handoff. The missing capability is paid-lead intelligence: provider/source performance, explainable lead scoring, county trends, market context, and lightweight data-quality checks.
 
 The main storage options were GHL custom fields, Notion, or the API's own database.
 
@@ -16,9 +16,9 @@ Use PostgreSQL as the source of truth for lead intelligence and expose the resul
 
 ## Rationale
 
-PostgreSQL fits the data shape: raw webhook events join to normalized leads, properties, source metadata, lead scores, duplicate matches, and market snapshots. Those relationships are awkward to maintain in GHL custom fields or Notion databases, especially when the goal is source accountability and historical reporting.
+PostgreSQL fits the data shape: raw webhook events join to normalized leads, properties, source metadata, lead scores, quality checks, and market snapshots. Those relationships are awkward to maintain in GHL custom fields or Notion databases, especially when the goal is source accountability and historical reporting.
 
-Notion remains useful as a downstream operating board, but it should receive compact summaries only. GHL can receive small operational flags later, such as score, duplicate flag, or review priority. Neither system should be the primary analytics store.
+Notion remains useful as a downstream operating board, but it should receive compact summaries only. GHL can receive small operational flags later, such as score, market-fit label, source quality signal, or review priority. Neither system should be the primary analytics store.
 
 ## Consequences
 

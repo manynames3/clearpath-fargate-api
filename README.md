@@ -11,13 +11,13 @@ This repository is built as a production-pattern AWS Terraform project for Clear
 
 Clearpath already uses GoHighLevel as the CRM. Paid lead providers send seller contact and property information into GHL, and GHL remains responsible for sales pipelines, automatic follow-up sequences, notifications, and Notion handoff workflows.
 
-This API does not replace that CRM workflow. It receives a copy of the GHL workflow event and creates an independent, queryable lead intelligence layer in PostgreSQL. The practical end-user value is source accountability and lead analysis: which paid lead sources, counties, and seller situations are worth buying again, whether each purchased lead was captured once, and what county-level market context should be shown with the lead.
+This API does not replace that CRM workflow. It receives a copy of the GHL workflow event and creates an independent, queryable lead intelligence layer in PostgreSQL. The practical end-user value is source accountability and lead analysis: which paid lead sources, counties, provider tags, and seller situations are worth buying again, and what county-level market context should be shown with each full-address lead.
 
 In short: GHL runs the sales workflow; Clearpath Lead Intelligence API owns the structured reporting and market-context layer.
 
-This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting queries with an API key, accepts signed GHL-compatible webhook payloads, serves cached market snapshots, and exposes intelligence endpoints for source performance, duplicate alerts, lead scores, and county performance.
+This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting queries with an API key, accepts signed GHL-compatible webhook payloads, serves cached market snapshots, and exposes intelligence endpoints for source performance, lead scores, county performance, and data-quality checks.
 
-The internal dashboard at `/dashboard` turns those API results into an operator-facing view: source scorecard, duplicate lead alerts, hot/warm/dead breakdowns, newest leads with score reasons, market context by county, and the current "needs review" queue.
+The internal dashboard at `/dashboard` turns those API results into an operator-facing view: provider/source scorecard, hot/warm/dead breakdowns, newest leads with score reasons, market context by county, provider quality signals, and the current "needs review" queue.
 
 ## Deployment Status
 
@@ -264,7 +264,7 @@ Security group flow is intentionally narrow:
 - `GET /api/market/gwinnett`
 - `GET /api/intelligence/summary`
 - `GET /api/intelligence/source-performance`
-- `GET /api/intelligence/duplicates`
+- `GET /api/intelligence/duplicates` - optional data-quality guardrail, not the primary product workflow
 - `GET /api/intelligence/lead-scores`
 - `GET /api/intelligence/county-performance`
 - `GET /dashboard` - internal lead intelligence dashboard

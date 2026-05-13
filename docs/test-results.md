@@ -31,9 +31,9 @@ Seeded a temporary SQLite database and served the API locally on port `8010` wit
 
 Verified:
 
-- `/api/intelligence/summary` returned lead, source, duplicate, review queue, and average score totals.
+- `/api/intelligence/summary` returned lead, source, review queue, recent webhook event, and average score totals.
 - `/api/intelligence/lead-scores?needs_review=true` returned scored leads with reasons and priorities.
-- `/dashboard` rendered the source scorecard, duplicate alerts, county performance, and needs-review queue from the API.
+- `/dashboard` rendered the source scorecard, provider quality signals, county performance, and needs-review queue from the API.
 
 ## GitHub Actions
 

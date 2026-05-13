@@ -69,12 +69,12 @@ async def seed_sample_data() -> None:
                 state="GA",
             ),
             Lead(
-                ghl_id="sample-gwinnett-duplicate",
+                ghl_id="sample-gwinnett-review",
                 source_id=source_by_name["paid-lead-vendor-a"].id,
-                first_name="Maya",
-                last_name="J.",
-                phone="+14045550101",
-                email="maya.alt@example.com",
+                first_name="Caleb",
+                last_name="Ward",
+                phone="+14045550104",
+                email="caleb@example.com",
                 status="warm",
                 source="paid-lead-vendor-a",
                 county="Gwinnett",
@@ -118,13 +118,13 @@ async def seed_sample_data() -> None:
                 ),
                 Property(
                     lead_id=leads[3].id,
-                    address="123 Mill Creek Rd",
-                    city="Lawrenceville",
+                    address="77 Beaver Ruin Rd",
+                    city="Norcross",
                     county="Gwinnett",
                     state="GA",
-                    zip="30043",
-                    estimated_value=385000,
-                    situation="inherited",
+                    zip="30071",
+                    estimated_value=305000,
+                    situation="deferred-maintenance",
                 ),
                 FollowUp(
                     lead_id=leads[0].id,
@@ -139,13 +139,6 @@ async def seed_sample_data() -> None:
                     method="sms",
                     notes="Needs to coordinate with sibling co-owner.",
                     next_follow_up=date.today() + timedelta(days=3),
-                ),
-                DuplicateLead(
-                    lead_id=leads[3].id,
-                    duplicate_lead_id=leads[0].id,
-                    match_type="phone",
-                    confidence=95,
-                    reason="Phone number matches an existing paid lead",
                 ),
                 LeadScore(
                     lead_id=leads[0].id,
@@ -170,9 +163,9 @@ async def seed_sample_data() -> None:
                 ),
                 LeadScore(
                     lead_id=leads[3].id,
-                    score=62,
+                    score=66,
                     priority="review",
-                    reasons=["Status is warm", "Possible duplicate lead", "Property address present"],
+                    reasons=["Status is warm", "Provider quality needs review", "Property address present"],
                     needs_review=True,
                 ),
                 WebhookEvent(
@@ -207,7 +200,7 @@ async def seed_sample_data() -> None:
         )
         await session.commit()
 
-    print("Seeded 4 sample leads, source metadata, scores, duplicate alerts, and 3 market snapshots.")
+    print("Seeded 4 sample leads, source metadata, scores, and 3 market snapshots.")
 
 
 if __name__ == "__main__":

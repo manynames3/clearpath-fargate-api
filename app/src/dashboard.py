@@ -171,8 +171,8 @@ async def dashboard():
           <div id="leadScores" class="score-list"></div>
         </section>
         <section class="panel">
-          <h2>Duplicate Lead Alerts</h2>
-          <div id="duplicates"></div>
+          <h2>Provider Quality Signals</h2>
+          <div id="qualitySignals"></div>
         </section>
       </div>
     </section>
@@ -199,7 +199,7 @@ async def dashboard():
       const kpis = [
         ["Total leads", summary.total_leads],
         ["Needs review", summary.needs_review_count],
-        ["Duplicates", summary.total_duplicates],
+        ["Lead sources", summary.total_sources],
         ["Avg score", summary.average_score ?? "n/a"],
       ];
       document.getElementById("kpis").innerHTML = kpis.map(([label, value]) => `
@@ -213,7 +213,7 @@ async def dashboard():
     function renderSourcePerformance(rows) {
       document.getElementById("sourcePerformance").innerHTML = `
         <table>
-          <thead><tr><th>Source</th><th>Leads</th><th>Avg Score</th><th>Review</th><th>Duplicates</th><th>Spend</th></tr></thead>
+          <thead><tr><th>Source</th><th>Leads</th><th>Avg Score</th><th>Review</th><th>Hot/Warm</th><th>Spend</th></tr></thead>
           <tbody>
             ${rows.map((row) => `
               <tr>
@@ -221,7 +221,7 @@ async def dashboard():
                 <td>${esc(row.total_leads)}</td>
                 <td>${esc(row.average_score ?? "n/a")}</td>
                 <td>${esc(row.needs_review_count)}</td>
-                <td>${esc(row.duplicate_count)}</td>
+                <td>${esc(row.hot_leads)} / ${esc(row.warm_leads)}</td>
                 <td>${row.estimated_spend_dollars == null ? "n/a" : "$" + esc(row.estimated_spend_dollars)}</td>
               </tr>
             `).join("")}
@@ -262,19 +262,33 @@ async def dashboard():
       `).join("") || '<span class="muted">No leads require review.</span>';
     }
 
-    function renderDuplicates(rows) {
-      document.getElementById("duplicates").innerHTML = `
+    function renderQualitySignals(sources, counties, summary) {
+      const rankedSources = [...sources].filter((row) => row.average_score !== null && row.average_score !== undefined);
+      const bestSource = rankedSources.sort((a, b) => b.average_score - a.average_score)[0];
+      const reviewSource = [...sources].sort((a, b) => b.needs_review_count - a.needs_review_count)[0];
+      const bestCounty = [...counties]
+        .filter((row) => row.average_score !== null && row.average_score !== undefined)
+        .sort((a, b) => b.average_score - a.average_score)[0];
+      document.getElementById("qualitySignals").innerHTML = `
         <table>
-          <thead><tr><th>Lead</th><th>Duplicate</th><th>Match</th><th>Confidence</th></tr></thead>
+          <thead><tr><th>Signal</th><th>Current Read</th></tr></thead>
           <tbody>
-            ${rows.map((row) => `
-              <tr>
-                <td>${esc(row.lead_name)}</td>
-                <td>${esc(row.duplicate_name)}</td>
-                <td>${esc(row.match_type)}</td>
-                <td>${esc(row.confidence)}%</td>
-              </tr>
-            `).join("")}
+            <tr>
+              <td>Best source by score</td>
+              <td>${bestSource ? `${esc(bestSource.source)} (${esc(bestSource.average_score)})` : "n/a"}</td>
+            </tr>
+            <tr>
+              <td>Source needing review</td>
+              <td>${reviewSource ? `${esc(reviewSource.source)} (${esc(reviewSource.needs_review_count)} leads)` : "n/a"}</td>
+            </tr>
+            <tr>
+              <td>Best county by score</td>
+              <td>${bestCounty ? `${esc(bestCounty.county)} (${esc(bestCounty.average_score)})` : "n/a"}</td>
+            </tr>
+            <tr>
+              <td>Recent GHL events</td>
+              <td>${esc(summary.recent_webhook_events)}</td>
+            </tr>
           </tbody>
         </table>`;
     }
@@ -283,18 +297,17 @@ async def dashboard():
       localStorage.setItem("clearpathApiKey", apiKeyInput.value.trim());
       statusNode.textContent = "Loading...";
       try {
-        const [summary, sources, counties, scores, duplicates] = await Promise.all([
+        const [summary, sources, counties, scores] = await Promise.all([
           fetchJson("/api/intelligence/summary"),
           fetchJson("/api/intelligence/source-performance"),
           fetchJson("/api/intelligence/county-performance"),
           fetchJson("/api/intelligence/lead-scores?needs_review=true&limit=8"),
-          fetchJson("/api/intelligence/duplicates?limit=8"),
         ]);
         renderKpis(summary);
         renderSourcePerformance(sources);
         renderCountyPerformance(counties);
         renderLeadScores(scores);
-        renderDuplicates(duplicates);
+        renderQualitySignals(sources, counties, summary);
         statusNode.textContent = `Updated ${new Date().toLocaleTimeString()}`;
       } catch (error) {
         statusNode.textContent = `Unable to load dashboard: ${error.message}`;

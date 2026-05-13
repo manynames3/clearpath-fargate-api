@@ -24,9 +24,9 @@ The end user benefit is not another follow-up system. The benefit is a clean dat
 
 ## Lead Intelligence Product Layer
 
-PostgreSQL is the source of truth for the intelligence layer. The API stores raw webhook events, normalized leads, property records, source/vendor metadata, duplicate matches, lead scores, and market snapshots. That keeps GHL focused on CRM execution while giving Clearpath a queryable reporting store for paid-lead decisions.
+PostgreSQL is the source of truth for the intelligence layer. The API stores raw webhook events, normalized leads, property records, source/vendor metadata, lead scores, data-quality checks, and market snapshots. That keeps GHL focused on CRM execution while giving Clearpath a queryable reporting store for paid-lead decisions.
 
-The FastAPI service exposes the reporting layer through `/api/intelligence/*` endpoints and serves a small internal dashboard at `/dashboard`. The dashboard is intentionally read-focused: source scorecards, duplicate alerts, county performance, scored leads, market context, and the needs-review queue. If Notion or GHL need updates later, they should receive compact summaries from this API rather than becoming the primary analytics store.
+The FastAPI service exposes the reporting layer through `/api/intelligence/*` endpoints and serves a small internal dashboard at `/dashboard`. The dashboard is intentionally read-focused: source scorecards, provider quality signals, county performance, scored leads, market context, and the needs-review queue. If Notion or GHL need updates later, they should receive compact summaries from this API rather than becoming the primary analytics store.
 
 ```mermaid
 flowchart LR
@@ -34,7 +34,7 @@ flowchart LR
     api --> events["Raw webhook events"]
     api --> leads["Normalized leads and properties"]
     api --> sources["Source/vendor metadata"]
-    api --> scores["Lead scores and duplicate matches"]
+    api --> scores["Lead scores and quality checks"]
     api --> market["Market snapshots"]
     events --> pg["PostgreSQL"]
     leads --> pg

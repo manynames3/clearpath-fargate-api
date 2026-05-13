@@ -36,7 +36,7 @@ export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw a
 | ALB target health | `docs/screenshots/alb-target-health.png` | Targets healthy on `/health`. |
 | RDS PostgreSQL | `docs/screenshots/rds-instance.png` | Private database, encrypted storage, IAM auth enabled. |
 | RDS Proxy | `docs/screenshots/rds-proxy-targets.png` | Proxy target registered and available. |
-| Intelligence dashboard | `docs/screenshots/dashboard.png` | `/dashboard` showing source scorecard, duplicate alerts, lead scores, and county performance. |
+| Intelligence dashboard | `docs/screenshots/dashboard.png` | `/dashboard` showing provider/source scorecard, quality signals, lead scores, and county performance. |
 | CloudFront | `docs/screenshots/cloudfront-distribution.png` | Distribution deployed with generated domain, or API aliases if custom-domain mode is enabled. |
 | WAF | `docs/screenshots/waf-web-acl.png` | WebACL attached to CloudFront. |
 | CloudWatch | `docs/screenshots/cloudwatch-dashboard.png` | ECS, ALB, CloudFront, and RDS widgets visible. |
@@ -94,14 +94,14 @@ curl -f "$API_BASE_URL/api/intelligence/summary" \
   -H "X-Clearpath-API-Key: <redacted>"
 ```
 
-Expected: totals for leads, sources, duplicate alerts, review queue, and average score.
+Expected: totals for leads, sources, review queue, recent webhook events, and average score.
 
 ```bash
 curl -f "$API_BASE_URL/api/intelligence/source-performance" \
   -H "X-Clearpath-API-Key: <redacted>"
 ```
 
-Expected: paid lead source/vendor scorecard with lead counts, review count, duplicate count, and average score.
+Expected: paid lead source/vendor scorecard with lead counts, review count, hot/warm count, spend estimate, and average score.
 
 ```bash
 curl -f "$API_BASE_URL/api/intelligence/lead-scores?needs_review=true" \

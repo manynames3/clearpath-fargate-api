@@ -1,6 +1,6 @@
 # GoHighLevel Integration
 
-Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: a configured GHL workflow can send lead/contact data to this API, and the API stores the raw event, upserts the lead plus property details, tracks source/vendor metadata, creates a lead score, and flags duplicate matches in PostgreSQL. The app does not call the GHL API yet.
+Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: a configured GHL workflow can send lead/contact data to this API, and the API stores the raw event, upserts the lead plus property details, tracks source/vendor metadata, and creates a lead score in PostgreSQL. The app does not call the GHL API yet.
 
 ## Where This Fits
 
@@ -10,7 +10,7 @@ Clearpath's current operating workflow is:
 Paid lead provider -> GoHighLevel CRM -> GHL workflows -> Notion / notifications / follow-up sequences
 ```
 
-This API is an additional workflow action, not a replacement for GHL. GHL continues to own CRM pipelines, automatic follow-up sequences, notifications, and the Notion handoff. Clearpath Lead Intelligence API receives a copy of the lead event so the business has an independent reporting store for paid-lead source accountability, county/situation analysis, and market context.
+This API is an additional workflow action, not a replacement for GHL. GHL continues to own CRM pipelines, automatic follow-up sequences, notifications, and the Notion handoff. Clearpath Lead Intelligence API receives a copy of the lead event so the business has an independent reporting store for paid-lead source accountability, provider tag analysis, county/situation analysis, and market context.
 
 The best live proof is a paid-lead-style event already entering GHL, followed by a GHL Workflow Custom Webhook delivery to this API with a `200` response.
 
@@ -124,7 +124,7 @@ On successful ingestion, the API also writes:
 | `webhook_events` | Raw delivery audit trail for source accountability and debugging |
 | `lead_sources` | Source/vendor/channel metadata for scorecards |
 | `lead_scores` | Simple explainable score, priority, and needs-review flag |
-| `duplicate_leads` | Possible duplicate matches by phone, email, or property address |
+| `duplicate_leads` | Optional data-quality guardrail for unusual same-contact or same-property matches |
 
 ## Signature Model
 
