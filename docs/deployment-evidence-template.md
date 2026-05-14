@@ -37,6 +37,7 @@ export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw a
 | RDS PostgreSQL | `docs/screenshots/rds-instance.png` | Private database, encrypted storage, IAM auth enabled. |
 | RDS Proxy | `docs/screenshots/rds-proxy-targets.png` | Proxy target registered and available. |
 | Paid lead dashboard | `docs/screenshots/dashboard.png` | `/dashboard` showing source ROI, acquisition funnel, stale lead queue, filtered lead table, and supporting market context. |
+| CSV backfill | `docs/screenshots/csv-backfill.png` | Dashboard import panel or API response showing historical provider CSV rows imported. |
 | CloudFront | `docs/screenshots/cloudfront-distribution.png` | Distribution deployed with generated domain, or API aliases if custom-domain mode is enabled. |
 | WAF | `docs/screenshots/waf-web-acl.png` | WebACL attached to CloudFront. |
 | CloudWatch | `docs/screenshots/cloudwatch-dashboard.png` | ECS, ALB, CloudFront, and RDS widgets visible. |
@@ -79,6 +80,15 @@ Expected:
 ```
 
 This proves the deployed receiver accepts a GHL-style payload and resolves county when the provider sends a full address but no county field. To prove the external GoHighLevel integration, also capture the GHL Workflow Custom Webhook delivery log from the paid-lead intake workflow used for validation. GHL should still own follow-up sequences, notifications, and Notion handoff; the Clearpath webhook is only the reporting/source-accountability copy.
+
+```bash
+curl -X POST "$API_BASE_URL/api/imports/leads/csv?source=Validation%20CSV&cost_per_lead_dollars=55" \
+  -H "Content-Type: text/csv" \
+  -H "X-Clearpath-API-Key: <redacted>" \
+  --data-binary @docs/fixtures/validation-leads.csv
+```
+
+Expected: import counts showing historical CSV rows accepted into the same analytics schema as GHL webhook events.
 
 ```bash
 curl -f "$API_BASE_URL/api/leads?county=Gwinnett&status=warm" \

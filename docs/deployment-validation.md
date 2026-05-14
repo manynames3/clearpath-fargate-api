@@ -31,7 +31,7 @@ Keep the live window focused on evidence, not extra build work:
 - Confirm CloudFront sends the origin header and ALB listener rules require it.
 - Trigger GitHub Actions `Build and Deploy` manually with `deploy=true`.
 - Capture ECS service health, task health, ALB target health, RDS Proxy target health, CloudFront deployed status, and WAF attachment.
-- Run API smoke tests through `api_base_url`, including `/health`, `/ready`, a GHL-style test payload to `/webhooks/ghl`, protected `/api/leads`, `/api/analytics/source-roi`, `/api/analytics/funnel`, `/api/analytics/stale-leads?days=7`, and `/api/market/gwinnett`.
+- Run API smoke tests through `api_base_url`, including `/health`, `/ready`, a CSV backfill to `/api/imports/leads/csv`, a GHL-style test payload to `/webhooks/ghl`, protected `/api/leads`, `/api/analytics/source-roi`, `/api/analytics/funnel`, `/api/analytics/stale-leads?days=7`, and `/api/market/gwinnett`.
 - Open `/dashboard` through `api_base_url` and capture the source ROI scorecard, acquisition funnel, stale lead queue, filtered lead table, and supporting market context.
 - If a real GoHighLevel account is available, add the Clearpath Custom Webhook action to the existing paid-lead intake workflow and capture the workflow delivery log. Otherwise, document the endpoint as GHL-ready but not externally connected.
 - Capture CloudFront cache headers on the second market endpoint request.
@@ -63,6 +63,7 @@ After apply, capture:
 - API health response through `api_base_url`
 - API readiness response proving database connectivity through `api_base_url`
 - GHL-style webhook receiver test returning `{"status":"accepted"}` and creating a lead
+- CSV backfill test returning import counts and creating historical lead rows
 - optional real GoHighLevel workflow delivery log from the paid-lead intake workflow, if a GHL account/location was connected during the validation window
 - protected `/api/leads` response using `X-Clearpath-API-Key`
 - protected `/api/analytics/source-roi` response showing source cost attribution and cost-per-close metrics

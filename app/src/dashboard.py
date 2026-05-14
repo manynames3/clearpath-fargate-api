@@ -89,6 +89,18 @@ async def dashboard():
       color: var(--text);
       border-color: var(--line);
     }
+    .import-panel {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(140px, 0.5fr) minmax(220px, 1.2fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .import-panel input {
+      background: white;
+      color: var(--text);
+      border-color: var(--line);
+      min-width: 0;
+    }
     .grid {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -158,11 +170,13 @@ async def dashboard():
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .layout { grid-template-columns: 1fr; }
       .stage-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .import-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 620px) {
       main { padding: 14px; }
       .site-footer { padding: 0 14px 18px; }
       .grid, .stage-grid { grid-template-columns: 1fr; }
+      .import-panel { grid-template-columns: 1fr; }
       input, select, button { width: 100%; }
       .toolbar, .filters { width: 100%; }
       .table-wrap { overflow-x: auto; }
@@ -198,6 +212,16 @@ async def dashboard():
       <input id="motivationFilter" placeholder="Motivation contains">
     </div>
     <div id="status" class="status"></div>
+    <section class="panel" style="margin-bottom:14px">
+      <h2>CSV Backfill</h2>
+      <div class="import-panel">
+        <input id="csvSource" placeholder="Default source/provider">
+        <input id="csvCost" type="number" min="0" step="0.01" placeholder="Cost per lead">
+        <input id="csvFile" type="file" accept=".csv,text/csv">
+        <button id="importCsv" type="button">Import CSV</button>
+      </div>
+      <div id="importStatus" class="muted" style="margin-top:8px">Use CSV for historical backfill; GHL webhooks keep new leads current.</div>
+    </section>
     <section class="grid" id="kpis"></section>
     <section class="panel">
       <h2>Acquisition Funnel</h2>
@@ -230,6 +254,7 @@ async def dashboard():
   <script>
     const apiKeyInput = document.getElementById("apiKey");
     const statusNode = document.getElementById("status");
+    const importStatus = document.getElementById("importStatus");
     const filterIds = ["sourceFilter", "countyFilter", "stageFilter", "motivationFilter"];
     apiKeyInput.value = localStorage.getItem("clearpathApiKey") || "";
 
@@ -239,10 +264,15 @@ async def dashboard():
     const dollars = (value) => value == null ? "n/a" : `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
     const percent = (value) => value == null ? "n/a" : `${value}%`;
 
-    async function fetchJson(path) {
+    function apiHeaders(extra = {}) {
       const headers = {};
       const key = apiKeyInput.value.trim();
       if (key) headers["X-Clearpath-API-Key"] = key;
+      return { ...headers, ...extra };
+    }
+
+    async function fetchJson(path) {
+      const headers = apiHeaders();
       const response = await fetch(path, { headers });
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       return response.json();
@@ -382,7 +412,39 @@ async def dashboard():
       }
     }
 
+    async function importCsv() {
+      localStorage.setItem("clearpathApiKey", apiKeyInput.value.trim());
+      const file = document.getElementById("csvFile").files[0];
+      if (!file) {
+        importStatus.textContent = "Choose a CSV file first.";
+        return;
+      }
+
+      const params = new URLSearchParams();
+      const source = document.getElementById("csvSource").value.trim();
+      const cost = document.getElementById("csvCost").value.trim();
+      if (source) params.set("source", source);
+      if (cost) params.set("cost_per_lead_dollars", cost);
+
+      importStatus.textContent = "Importing CSV...";
+      try {
+        const body = await file.text();
+        const response = await fetch(`/api/imports/leads/csv?${params.toString()}`, {
+          method: "POST",
+          headers: apiHeaders({ "Content-Type": "text/csv" }),
+          body,
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || `${response.status} ${response.statusText}`);
+        importStatus.textContent = `Imported ${result.imported}/${result.rows_received} rows from CSV. Failed: ${result.failed}.`;
+        await refreshDashboard();
+      } catch (error) {
+        importStatus.textContent = `CSV import failed: ${error.message}`;
+      }
+    }
+
     document.getElementById("refresh").addEventListener("click", refreshDashboard);
+    document.getElementById("importCsv").addEventListener("click", importCsv);
     filterIds.forEach((id) => document.getElementById(id).addEventListener("change", refreshDashboard));
     filterIds.forEach((id) => document.getElementById(id).addEventListener("keydown", (event) => {
       if (event.key === "Enter") refreshDashboard();

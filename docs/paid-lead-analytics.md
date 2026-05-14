@@ -8,6 +8,7 @@ GoHighLevel remains responsible for lead intake, pipeline stages, texting/callin
 
 This service owns the reporting layer that GHL and spreadsheets do not handle cleanly:
 
+- import historical provider CSV files into the same schema used by live events
 - normalize paid-lead provider fields into one schema
 - track lead lifecycle outcomes over time
 - attach source cost inputs to each provider
@@ -22,10 +23,21 @@ Excel can calculate ROI after the data has already been exported, cleaned, recon
 The useful automation here is the pipeline:
 
 ```text
-GHL/provider event -> normalized lead/property/source record -> lifecycle outcome history -> ROI analytics dashboard
+CSV backfill or GHL event -> normalized lead/property/source record -> lifecycle outcome history -> ROI analytics dashboard
 ```
 
 That matters when there are multiple paid providers with different field names, different lead costs, and different conversion quality.
+
+## Two Ingestion Paths
+
+The product intentionally supports both:
+
+| Path | Purpose |
+|---|---|
+| `POST /api/imports/leads/csv` | Historical backfill from paid lead provider exports |
+| `POST /webhooks/ghl` | Live updates from the CRM workflow going forward |
+
+CSV gets existing lead history into the dashboard. GHL keeps the analytics current after the backfill is complete.
 
 ## Lifecycle Stages
 

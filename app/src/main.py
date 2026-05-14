@@ -6,6 +6,7 @@ from src.analytics import router as analytics_router
 from src.database import check_database_ready, init_db
 from src.dashboard import router as dashboard_router
 from src.intelligence import router as intelligence_router
+from src.imports import router as imports_router
 from src.leads import router as leads_router
 from src.market import router as market_router
 from src.webhooks import router as webhook_router
@@ -24,6 +25,7 @@ app.include_router(leads_router, prefix="/api")
 app.include_router(market_router, prefix="/api")
 app.include_router(intelligence_router, prefix="/api")
 app.include_router(analytics_router, prefix="/api")
+app.include_router(imports_router, prefix="/api")
 app.include_router(dashboard_router)
 
 

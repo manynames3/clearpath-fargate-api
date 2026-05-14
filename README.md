@@ -9,7 +9,7 @@ This repository is built as a production-pattern AWS Terraform project for Clear
 
 ## TLDR
 
-Clearpath Lead Intelligence API is a containerized FastAPI service that receives GoHighLevel-compatible lead webhook events, normalizes paid seller lead data into PostgreSQL, tracks each lead through the acquisition funnel, and exposes an internal dashboard for source ROI: cost per lead, appointment, contract, and closed deal.
+Clearpath Lead Intelligence API is a containerized FastAPI service that ingests paid seller leads from both CSV backfills and GoHighLevel-compatible webhook events, normalizes them into PostgreSQL, tracks each lead through the acquisition funnel, and exposes an internal dashboard for source ROI: cost per lead, appointment, contract, and closed deal.
 
 The project demonstrates production-style AWS delivery with Terraform: private ECS Fargate tasks, ALB routing, RDS PostgreSQL behind RDS Proxy, Secrets Manager, CloudFront, WAF, CloudWatch, CI validation, and documented teardown. It was deployed briefly for AWS evidence, screenshotted, and destroyed to avoid idle cloud costs.
 
@@ -17,15 +17,15 @@ Locally, the same app can run with Docker Compose and Postgres, or with a SQLite
 
 ## Business Fit
 
-Clearpath already uses GoHighLevel as the CRM. Paid lead providers send seller contact and property information into GHL, and GHL remains responsible for sales pipelines, automatic follow-up sequences, notifications, and Notion handoff workflows.
+Clearpath already uses GoHighLevel as the CRM. Paid lead providers send seller contact and property information into GHL, and GHL remains responsible for sales pipelines, automatic follow-up sequences, notifications, and Notion handoff workflows. Historical provider spreadsheets can also be imported directly so the analytics layer starts with existing lead history instead of waiting for only new leads.
 
-This API does not replace that CRM workflow. It receives a copy of the GHL workflow event and creates an independent, queryable paid-lead analytics layer in PostgreSQL. The practical end-user value is source accountability: which paid lead providers produce appointments, offers, contracts, and closed deals after lead cost is considered.
+This API does not replace that CRM workflow. It imports historical CSV lead files and receives a copy of the GHL workflow event going forward, creating an independent, queryable paid-lead analytics layer in PostgreSQL. The practical end-user value is source accountability: which paid lead providers produce appointments, offers, contracts, and closed deals after lead cost is considered.
 
 If the provider sends a full property address but no county, the ingestion path resolves county automatically instead of making the dashboard parse address text. It prefers an explicit provider/GHL county field, then address geocoding, then a ZIP fallback with stored resolution confidence.
 
-In short: GHL runs the sales workflow; Clearpath Lead Intelligence API owns provider normalization, lifecycle outcome history, source ROI, stale lead visibility, and supporting market context.
+In short: CSV import loads the historical baseline, GHL webhooks keep new activity current, and Clearpath Lead Intelligence API owns provider normalization, lifecycle outcome history, source ROI, stale lead visibility, and supporting market context.
 
-This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting queries with an API key, accepts signed GHL-compatible webhook payloads, serves cached market snapshots, and exposes analytics endpoints for source ROI, funnel conversion, filtered lead views, stale lead follow-up, and lifecycle outcome updates.
+This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting and import routes with an API key, accepts CSV backfills and signed GHL-compatible webhook payloads, serves cached market snapshots, and exposes analytics endpoints for source ROI, funnel conversion, filtered lead views, stale lead follow-up, and lifecycle outcome updates.
 
 The internal dashboard at `/dashboard` turns those API results into an operator-facing view: source ROI scorecard, acquisition funnel, stale lead queue, filterable all-leads table, and county market context as supporting information.
 
@@ -89,6 +89,7 @@ Use [docs/troubleshooting.md](docs/troubleshooting.md) for validation troublesho
 Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel-ready webhook receiver, setup requirements, and payload mapping.
+Use [docs/csv-backfill.md](docs/csv-backfill.md) for historical paid lead imports from provider CSV exports.
 Use [docs/lead-scoring.md](docs/lead-scoring.md) for the rule-based scoring model, provider field mapping, and CSV backfill path.
 Use [docs/paid-lead-analytics.md](docs/paid-lead-analytics.md) for the V2 product scope: source ROI, lifecycle outcomes, stale lead detection, and why this is not a CRM or spreadsheet clone.
 Use [docs/github-deploy-setup.md](docs/github-deploy-setup.md) for the manual GitHub Actions image deployment path.
@@ -164,6 +165,12 @@ curl -f "http://localhost:8000/api/analytics/leads?source=paid-lead-vendor-a&lif
 
 ```bash
 curl -f "http://localhost:8000/api/analytics/stale-leads?days=7"
+```
+
+```bash
+curl -X POST "http://localhost:8000/api/imports/leads/csv?source=ISTL%20Leads%202&cost_per_lead_dollars=55" \
+  -H "Content-Type: text/csv" \
+  --data-binary @leads.csv
 ```
 
 ```bash
@@ -288,6 +295,7 @@ Security group flow is intentionally narrow:
 - `GET /api/analytics/funnel`
 - `GET /api/analytics/source-roi`
 - `GET /api/analytics/stale-leads`
+- `POST /api/imports/leads/csv` - protected historical CSV backfill into the same analytics schema
 - `PATCH /api/leads/{lead_id}/outcome`
 - `PATCH /api/analytics/sources/{source_name}/cost`
 - `GET /api/intelligence/summary` - supporting operational summary

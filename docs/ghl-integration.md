@@ -1,6 +1,6 @@
 # GoHighLevel Integration
 
-Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: a configured GHL workflow can send lead/contact data to this API, and the API stores the raw event, upserts the lead plus property details, tracks source/vendor metadata, records lifecycle outcomes, and calculates paid-source ROI in PostgreSQL. The app does not call the GHL API yet.
+Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. A configured GHL workflow can send lead/contact data to this API, and the API stores the raw event, upserts the lead plus property details, tracks source/vendor metadata, records lifecycle outcomes, and calculates paid-source ROI in PostgreSQL. Historical provider spreadsheets use the separate CSV backfill path documented in [csv-backfill.md](csv-backfill.md). The app does not call the GHL API yet.
 
 ## Where This Fits
 

@@ -360,3 +360,20 @@ class SourceCostResponse(BaseModel):
     vendor_name: str | None = None
     channel: str | None = None
     cost_per_lead_dollars: float | None = None
+
+
+class CsvImportError(BaseModel):
+    row_number: int
+    message: str
+
+
+class CsvImportResponse(BaseModel):
+    provider: str
+    source: str | None = None
+    dry_run: bool
+    rows_received: int
+    imported: int
+    failed: int
+    source_cost_updates: int
+    sample_lead_ids: list[str]
+    errors: list[CsvImportError]

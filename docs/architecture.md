@@ -1,8 +1,8 @@
 # Architecture
 
-Clearpath Lead Intelligence API exposes a GoHighLevel-compatible webhook receiver, stores paid lead/property/source/outcome data in RDS PostgreSQL, and serves a paid lead analytics dashboard through CloudFront.
+Clearpath Lead Intelligence API exposes both a CSV backfill importer and a GoHighLevel-compatible webhook receiver, stores paid lead/property/source/outcome data in RDS PostgreSQL, and serves a paid lead analytics dashboard through CloudFront.
 
-The intended GoHighLevel connection is a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping, webhook authentication, and the external GHL setup still required for live delivery. GHL remains the CRM automation layer for pipelines, follow-up sequences, notifications, and Notion workflows. This API is the separate analytics layer for source accountability, provider normalization, lifecycle outcomes, and source ROI.
+The intended GoHighLevel connection is a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping, webhook authentication, and the external GHL setup still required for live delivery. Historical provider spreadsheets enter through `POST /api/imports/leads/csv`; see [csv-backfill.md](csv-backfill.md). GHL remains the CRM automation layer for pipelines, follow-up sequences, notifications, and Notion workflows. This API is the separate analytics layer for source accountability, provider normalization, lifecycle outcomes, and source ROI.
 
 Architecture decision records are maintained in [decisions](decisions/README.md).
 
@@ -13,6 +13,8 @@ Paid lead providers already deliver motivated-seller leads into GoHighLevel. The
 ```mermaid
 flowchart LR
     provider["Paid lead provider"] --> ghl["GoHighLevel CRM"]
+    provider --> csv["Historical CSV export"]
+    csv --> api["Clearpath Lead Intelligence API"]
     ghl --> sales["Pipelines, follow-up sequences, notifications"]
     ghl --> notion["Existing Notion operating board"]
     ghl --> api["Clearpath Lead Intelligence API"]
