@@ -7,6 +7,14 @@ Containerized REST API on ECS Fargate, RDS PostgreSQL, RDS Proxy, CloudFront, op
 
 This repository is built as a production-pattern AWS Terraform project for Clearpath Property Group's paid off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story. ECS Fargate is the primary AWS deployment path, with an optional Kubernetes/EKS manifest track in `k8s/`.
 
+## TLDR
+
+Clearpath Lead Intelligence API is a containerized FastAPI service that receives GoHighLevel-compatible lead webhook events, normalizes seller/property data into PostgreSQL, enriches records with source, score, and county-market context, and exposes an internal dashboard for deciding which paid lead sources and markets are worth buying again.
+
+The project demonstrates production-style AWS delivery with Terraform: private ECS Fargate tasks, ALB routing, RDS PostgreSQL behind RDS Proxy, Secrets Manager, CloudFront, WAF, CloudWatch, CI validation, and documented teardown. It was deployed briefly for AWS evidence, screenshotted, and destroyed to avoid idle cloud costs.
+
+Locally, the same app can run with Docker Compose and Postgres, or with a SQLite fallback for quick development.
+
 ## Business Fit
 
 Clearpath already uses GoHighLevel as the CRM. Paid lead providers send seller contact and property information into GHL, and GHL remains responsible for sales pipelines, automatic follow-up sequences, notifications, and Notion handoff workflows.
