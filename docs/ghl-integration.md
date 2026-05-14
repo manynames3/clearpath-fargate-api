@@ -1,6 +1,6 @@
 # GoHighLevel Integration
 
-Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: a configured GHL workflow can send lead/contact data to this API, and the API stores the raw event, upserts the lead plus property details, tracks source/vendor metadata, and creates a lead score in PostgreSQL. The app does not call the GHL API yet.
+Clearpath exposes a GoHighLevel-compatible receiver at `POST /webhooks/ghl`. The current implementation is intentionally webhook-first: a configured GHL workflow can send lead/contact data to this API, and the API stores the raw event, upserts the lead plus property details, tracks source/vendor metadata, records lifecycle outcomes, and calculates paid-source ROI in PostgreSQL. The app does not call the GHL API yet.
 
 ## Where This Fits
 
@@ -10,13 +10,13 @@ Clearpath's current operating workflow is:
 Paid lead provider -> GoHighLevel CRM -> GHL workflows -> Notion / notifications / follow-up sequences
 ```
 
-This API is an additional workflow action, not a replacement for GHL. GHL continues to own CRM pipelines, automatic follow-up sequences, notifications, and the Notion handoff. Clearpath Lead Intelligence API receives a copy of the lead event so the business has an independent reporting store for paid-lead source accountability, provider tag analysis, county/situation analysis, and market context.
+This API is an additional workflow action, not a replacement for GHL. GHL continues to own CRM pipelines, automatic follow-up sequences, notifications, and the Notion handoff. Clearpath Lead Intelligence API receives a copy of the lead event so the business has an independent reporting store for paid-lead source accountability, provider field normalization, lifecycle outcomes, stale lead visibility, and source ROI.
 
 The best live proof is a paid-lead-style event already entering GHL, followed by a GHL Workflow Custom Webhook delivery to this API with a `200` response.
 
 ## Current Status
 
-The repository includes the receiving endpoint, payload mapping, shared-secret validation, local tests, intelligence endpoints, dashboard, and AWS infrastructure needed to accept GHL-style webhook payloads. A live GoHighLevel workflow has not been connected or captured as evidence yet.
+The repository includes the receiving endpoint, payload mapping, shared-secret validation, local tests, analytics endpoints, dashboard, and AWS infrastructure needed to accept GHL-style webhook payloads. A live GoHighLevel workflow has not been connected or captured as evidence yet.
 
 To prove the external integration, configure a GHL Workflow Custom Webhook during a future validation window, send a real lead-intake workflow event to the deployed CloudFront URL, and capture the GHL delivery log plus the resulting lead query from this API.
 
@@ -149,6 +149,7 @@ On successful ingestion, the API also writes:
 |---|---|
 | `webhook_events` | Raw delivery audit trail for source accountability and debugging |
 | `lead_sources` | Source/vendor/channel metadata for scorecards |
+| `lead_outcomes` | Lifecycle history used for source ROI and funnel analytics |
 | `lead_scores` | Simple explainable score, priority, and needs-review flag |
 | `duplicate_leads` | Optional data-quality guardrail for unusual same-contact or same-property matches |
 
@@ -202,7 +203,8 @@ Confirm the intelligence layer:
 
 ```bash
 curl -f "http://localhost:8000/api/intelligence/summary"
-curl -f "http://localhost:8000/api/intelligence/lead-scores?needs_review=true"
+curl -f "http://localhost:8000/api/analytics/source-roi"
+curl -f "http://localhost:8000/api/analytics/funnel"
 ```
 
 Open the dashboard:
@@ -221,8 +223,8 @@ During a short paid AWS/GHL validation window, capture:
 - Custom Webhook action showing `POST` to `$API_BASE_URL/webhooks/ghl`; hide the secret header value.
 - Workflow execution or delivery log showing the Clearpath webhook returned `200`.
 - Protected `/api/leads` query showing the same GHL contact/source/property data stored in PostgreSQL.
-- `/api/intelligence/source-performance` or `/dashboard` showing the same source included in the paid-lead scorecard.
-- `/api/intelligence/lead-scores` showing score reasons and review priority for the delivered lead.
+- `/api/analytics/source-roi` or `/dashboard` showing the same source included in the paid-lead ROI scorecard.
+- `/api/analytics/funnel` or `PATCH /api/leads/{lead_id}/outcome` showing lifecycle outcome tracking.
 - Optional Notion screenshot showing the existing workflow still receives the lead, proving the API is additive rather than a replacement.
 
 ## Later GHL API Work

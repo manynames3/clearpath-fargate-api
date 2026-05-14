@@ -118,9 +118,12 @@ The importer generates a stable CSV contact id when no GHL id exists by hashing 
 email, and property address. That makes repeated imports idempotent for the same source
 data.
 
-## Next Scoring Upgrade
+## Product Boundary
 
-The next useful upgrade is market context. Redfin/Census-derived ZIP or county metrics can
-add signals such as median sale price, days on market, inventory pressure, income context,
-and market competitiveness. Those should be loaded into PostgreSQL as cached monthly data,
-then joined to leads by ZIP/county during scoring.
+Scoring is a supporting signal, not the main product claim. V2 is centered on paid lead
+source ROI and lifecycle outcomes: which vendors produce appointments, offers, contracts,
+and closed deals after lead cost is considered.
+
+County and ZIP market data can remain useful context, but it should not turn this repo into
+a market intelligence product. Any future scoring changes should stay explainable and tied
+to acquisition operations rather than fake ML or broad market-research scope.

@@ -253,3 +253,110 @@ class CountyPerformanceItem(BaseModel):
     average_score: float | None
     median_price: int | None = None
     avg_dom: int | None = None
+
+
+class AnalyticsLeadItem(BaseModel):
+    id: str
+    ghl_id: str
+    lead_name: str
+    source: str | None = None
+    vendor_name: str | None = None
+    status: str
+    lifecycle_stage: str
+    score: int | None = None
+    priority: str | None = None
+    county: str | None = None
+    state: str
+    city: str | None = None
+    zip: str | None = None
+    property_address: str | None = None
+    motivation: str | None = None
+    urgency: str | None = None
+    occupancy: str | None = None
+    listing_status: str | None = None
+    repair_scope: str | None = None
+    last_outcome_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class AnalyticsLeadsPage(BaseModel):
+    count: int
+    limit: int
+    leads: list[AnalyticsLeadItem]
+
+
+class FunnelStageItem(BaseModel):
+    stage: str
+    count: int
+    conversion_rate: float | None = None
+
+
+class FunnelResponse(BaseModel):
+    total_leads: int
+    stages: list[FunnelStageItem]
+
+
+class SourceRoiItem(BaseModel):
+    source: str
+    vendor_name: str | None = None
+    channel: str | None = None
+    total_leads: int
+    cost_per_lead_dollars: float | None = None
+    estimated_spend_dollars: float | None = None
+    contacted_count: int
+    appointment_count: int
+    offer_count: int
+    contract_count: int
+    closed_count: int
+    dead_count: int
+    appointment_rate: float | None = None
+    offer_rate: float | None = None
+    contract_rate: float | None = None
+    close_rate: float | None = None
+    cost_per_appointment_dollars: float | None = None
+    cost_per_contract_dollars: float | None = None
+    cost_per_close_dollars: float | None = None
+
+
+class StaleLeadItem(BaseModel):
+    lead_id: str
+    lead_name: str
+    source: str | None = None
+    status: str
+    lifecycle_stage: str
+    last_activity_at: datetime | None = None
+    stale_days: int
+    property_address: str | None = None
+
+
+class OutcomeUpdateRequest(BaseModel):
+    stage: str = Field(
+        description="Lifecycle stage: received, contacted, appointment, offer, contract, closed, or dead"
+    )
+    dead_reason: str | None = None
+    notes: str | None = None
+    occurred_at: datetime | None = None
+
+
+class OutcomeResponse(BaseModel):
+    id: str
+    lead_id: str
+    stage: str
+    dead_reason: str | None = None
+    notes: str | None = None
+    occurred_at: datetime
+    status: str
+
+
+class SourceCostUpdateRequest(BaseModel):
+    cost_per_lead_dollars: float | None = Field(default=None, ge=0)
+    vendor_name: str | None = None
+    channel: str | None = None
+
+
+class SourceCostResponse(BaseModel):
+    source: str
+    vendor_name: str | None = None
+    channel: str | None = None
+    cost_per_lead_dollars: float | None = None

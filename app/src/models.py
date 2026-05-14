@@ -35,6 +35,11 @@ class Lead(Base):
     source_meta: Mapped["LeadSource | None"] = relationship(back_populates="leads")
     webhook_events: Mapped[list["WebhookEvent"]] = relationship(back_populates="lead")
     score: Mapped["LeadScore | None"] = relationship(back_populates="lead", cascade="all, delete-orphan")
+    outcomes: Mapped[list["LeadOutcome"]] = relationship(
+        back_populates="lead",
+        cascade="all, delete-orphan",
+        order_by="LeadOutcome.occurred_at",
+    )
 
 
 class LeadSource(Base):
@@ -146,3 +151,17 @@ class DuplicateLead(Base):
 
     lead: Mapped[Lead] = relationship(foreign_keys=[lead_id])
     duplicate_lead: Mapped[Lead] = relationship(foreign_keys=[duplicate_lead_id])
+
+
+class LeadOutcome(Base):
+    __tablename__ = "lead_outcomes"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    lead_id: Mapped[str] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"))
+    stage: Mapped[str] = mapped_column(String(50), nullable=False)
+    dead_reason: Mapped[str | None] = mapped_column(String(255))
+    notes: Mapped[str | None] = mapped_column(Text)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    lead: Mapped[Lead] = relationship(back_populates="outcomes")

@@ -1,6 +1,6 @@
 # Test Results
 
-Last verified: 2026-05-12 22:31 EDT from `/Users/aiden/clearpath-fargate-api-work`.
+Last verified: 2026-05-14 18:34 EDT from `/Users/aiden/clearpath-fargate-api-work`.
 
 ## Local Validation
 
@@ -16,14 +16,14 @@ Summary:
 
 | Check | Result |
 |---|---|
-| FastAPI test suite | `26 passed` |
+| FastAPI test suite | `32 passed` |
 | Terraform format check | Passed |
 | Terraform init with backend disabled | Passed |
 | Terraform validate | Passed |
 | Kubernetes manifest render | Passed: local overlay rendered 8 objects, EKS overlay rendered 9 objects |
 | Checkov Terraform scan | `339 passed`, `0 failed`, `44 skipped` |
 | Checkov Kubernetes scan | `96 passed`, `0 failed`, `1 skipped` |
-| Alembic sanity check | Initial revision plus Phase 7 intelligence and county-resolution revisions discovered; migration files compile |
+| Alembic sanity check | Initial revision plus Phase 7 intelligence, county-resolution, and lifecycle outcome revisions discovered; migration files compile |
 
 ## Local Phase 7 Smoke
 
@@ -31,9 +31,10 @@ Seeded a temporary SQLite database and served the API locally on port `8010` wit
 
 Verified:
 
-- `/api/intelligence/summary` returned lead, source, review queue, recent webhook event, and average score totals.
-- `/api/intelligence/lead-scores?needs_review=true` returned scored leads with reasons and priorities.
-- `/dashboard` rendered the source scorecard, provider quality signals, county performance, and needs-review queue from the API.
+- `/api/analytics/source-roi` returned source-level lead count, spend, funnel counts, close rate, and cost-per-close metrics.
+- `/api/analytics/funnel` returned lifecycle conversion counts from received through contacted, appointment, offer, contract, closed, and dead.
+- `/api/analytics/stale-leads?days=7` returned leads with no recent lifecycle or follow-up activity.
+- `/dashboard` rendered the paid lead source ROI scorecard, acquisition funnel, lead table, stale lead queue, market context, and footer branding.
 
 ## GitHub Actions
 
@@ -65,4 +66,4 @@ Evidence:
 
 ![CloudFront health response](screenshots/live-validation/01-cloudfront-health-response.png)
 
-The AWS stack was destroyed after evidence capture to avoid ongoing cost. A future paid validation window should capture the full deployed smoke set: `/ready`, `/webhooks/ghl`, protected `/api/leads`, `/api/intelligence/summary`, `/api/intelligence/source-performance`, `/api/intelligence/lead-scores?needs_review=true`, `/dashboard`, `/api/market/gwinnett`, and CloudFront cache headers.
+The AWS stack was destroyed after evidence capture to avoid ongoing cost. A future paid validation window should capture the full deployed smoke set: `/ready`, `/webhooks/ghl`, protected `/api/leads`, `/api/analytics/source-roi`, `/api/analytics/funnel`, `/api/analytics/stale-leads?days=7`, `PATCH /api/leads/{lead_id}/outcome`, `/dashboard`, `/api/market/gwinnett`, and CloudFront cache headers.

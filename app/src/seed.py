@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 from sqlalchemy import delete
 
 from src.database import get_engine, get_session_factory
-from src.models import Base, DuplicateLead, FollowUp, Lead, LeadScore, LeadSource, MarketSnapshot, Property, WebhookEvent
+from src.models import Base, DuplicateLead, FollowUp, Lead, LeadOutcome, LeadScore, LeadSource, MarketSnapshot, Property, WebhookEvent
 
 
 async def seed_sample_data() -> None:
@@ -13,6 +13,7 @@ async def seed_sample_data() -> None:
 
     async with get_session_factory()() as session:
         await session.execute(delete(DuplicateLead))
+        await session.execute(delete(LeadOutcome))
         await session.execute(delete(LeadScore))
         await session.execute(delete(WebhookEvent))
         await session.execute(delete(FollowUp))
@@ -39,7 +40,7 @@ async def seed_sample_data() -> None:
                 last_name="Johnson",
                 phone="+14045550101",
                 email="maya@example.com",
-                status="hot",
+                status="closed",
                 source="paid-lead-vendor-a",
                 county="Gwinnett",
                 state="GA",
@@ -51,7 +52,7 @@ async def seed_sample_data() -> None:
                 last_name="Reed",
                 phone="+17705550102",
                 email="elliot@example.com",
-                status="warm",
+                status="appointment",
                 source="facebook",
                 county="Cobb",
                 state="GA",
@@ -63,7 +64,7 @@ async def seed_sample_data() -> None:
                 last_name="Miles",
                 phone="+16785550103",
                 email="tanya@example.com",
-                status="new",
+                status="dead",
                 source="direct",
                 county="Fulton",
                 state="GA",
@@ -75,7 +76,7 @@ async def seed_sample_data() -> None:
                 last_name="Ward",
                 phone="+14045550104",
                 email="caleb@example.com",
-                status="warm",
+                status="new",
                 source="paid-lead-vendor-a",
                 county="Gwinnett",
                 state="GA",
@@ -180,12 +181,30 @@ async def seed_sample_data() -> None:
                     notes="Needs to coordinate with sibling co-owner.",
                     next_follow_up=date.today() + timedelta(days=3),
                 ),
+                LeadOutcome(lead_id=leads[0].id, stage="received", occurred_at=now - timedelta(days=40)),
+                LeadOutcome(lead_id=leads[0].id, stage="contacted", occurred_at=now - timedelta(days=38)),
+                LeadOutcome(lead_id=leads[0].id, stage="appointment", occurred_at=now - timedelta(days=30)),
+                LeadOutcome(lead_id=leads[0].id, stage="offer", occurred_at=now - timedelta(days=20)),
+                LeadOutcome(lead_id=leads[0].id, stage="contract", occurred_at=now - timedelta(days=10)),
+                LeadOutcome(lead_id=leads[0].id, stage="closed", occurred_at=now - timedelta(days=2)),
+                LeadOutcome(lead_id=leads[1].id, stage="received", occurred_at=now - timedelta(days=35)),
+                LeadOutcome(lead_id=leads[1].id, stage="contacted", occurred_at=now - timedelta(days=30)),
+                LeadOutcome(lead_id=leads[1].id, stage="appointment", occurred_at=now - timedelta(days=12)),
+                LeadOutcome(lead_id=leads[2].id, stage="received", occurred_at=now - timedelta(days=28)),
+                LeadOutcome(lead_id=leads[2].id, stage="contacted", occurred_at=now - timedelta(days=27)),
+                LeadOutcome(
+                    lead_id=leads[2].id,
+                    stage="dead",
+                    dead_reason="Seller only wanted retail pricing",
+                    occurred_at=now - timedelta(days=20),
+                ),
+                LeadOutcome(lead_id=leads[3].id, stage="received", occurred_at=now - timedelta(days=14)),
                 LeadScore(
                     lead_id=leads[0].id,
                     score=96,
                     priority="high",
                     reasons=[
-                        "Status is hot",
+                        "Status is closed",
                         "Urgency signal: ASAP",
                         "Motivation signal: inherited",
                         "Property is vacant",
@@ -251,7 +270,7 @@ async def seed_sample_data() -> None:
         )
         await session.commit()
 
-    print("Seeded 4 sample leads, source metadata, scores, and 3 market snapshots.")
+    print("Seeded 4 sample leads, source metadata, lifecycle outcomes, scores, and 3 market snapshots.")
 
 
 if __name__ == "__main__":

@@ -100,6 +100,16 @@ CREATE TABLE IF NOT EXISTS duplicate_leads (
     UNIQUE(lead_id, duplicate_lead_id, match_type)
 );
 
+CREATE TABLE IF NOT EXISTS lead_outcomes (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lead_id     UUID REFERENCES leads(id) ON DELETE CASCADE,
+    stage       VARCHAR(50) NOT NULL,
+    dead_reason VARCHAR(255),
+    notes       TEXT,
+    occurred_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_leads_source_id ON leads(source_id);
 CREATE INDEX IF NOT EXISTS idx_leads_county ON leads(county);
 CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
@@ -111,6 +121,9 @@ CREATE INDEX IF NOT EXISTS idx_lead_scores_score ON lead_scores(score);
 CREATE INDEX IF NOT EXISTS idx_lead_scores_needs_review ON lead_scores(needs_review);
 CREATE INDEX IF NOT EXISTS idx_duplicate_leads_lead_id ON duplicate_leads(lead_id);
 CREATE INDEX IF NOT EXISTS idx_duplicate_leads_duplicate_id ON duplicate_leads(duplicate_lead_id);
+CREATE INDEX IF NOT EXISTS idx_lead_outcomes_lead_id ON lead_outcomes(lead_id);
+CREATE INDEX IF NOT EXISTS idx_lead_outcomes_stage ON lead_outcomes(stage);
+CREATE INDEX IF NOT EXISTS idx_lead_outcomes_occurred_at ON lead_outcomes(occurred_at);
 
 DO $$
 BEGIN

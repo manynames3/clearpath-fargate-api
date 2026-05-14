@@ -1,8 +1,8 @@
 # Architecture
 
-Clearpath Lead Intelligence API exposes a GoHighLevel-compatible webhook receiver, stores paid lead/property/source data in RDS PostgreSQL, and serves query and market snapshot endpoints through CloudFront.
+Clearpath Lead Intelligence API exposes a GoHighLevel-compatible webhook receiver, stores paid lead/property/source/outcome data in RDS PostgreSQL, and serves a paid lead analytics dashboard through CloudFront.
 
-The intended GoHighLevel connection is a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping, webhook authentication, and the external GHL setup still required for live delivery. GHL remains the CRM automation layer for pipelines, follow-up sequences, notifications, and Notion workflows. This API is the separate intelligence layer for source accountability, reporting, and market context.
+The intended GoHighLevel connection is a Workflow Custom Webhook that posts contact and property fields to `/webhooks/ghl`; see [ghl-integration.md](ghl-integration.md) for payload mapping, webhook authentication, and the external GHL setup still required for live delivery. GHL remains the CRM automation layer for pipelines, follow-up sequences, notifications, and Notion workflows. This API is the separate analytics layer for source accountability, provider normalization, lifecycle outcomes, and source ROI.
 
 Architecture decision records are maintained in [decisions](decisions/README.md).
 
@@ -17,16 +17,16 @@ flowchart LR
     ghl --> notion["Existing Notion operating board"]
     ghl --> api["Clearpath Lead Intelligence API"]
     api --> db["PostgreSQL lead/source/property records"]
-    api --> reports["Source, county, situation, and market queries"]
+    api --> reports["Source ROI, funnel, stale lead, and market queries"]
 ```
 
-The end user benefit is not another follow-up system. The benefit is a clean data layer for questions such as which lead source is worth buying again, which counties produce usable opportunities, which seller situations are common, and whether every purchased lead was captured into the reporting store.
+The end user benefit is not another follow-up system. The benefit is a clean data layer for questions such as which lead source is worth buying again, how much each appointment/contract/close cost, and whether purchased leads are getting stuck before the acquisitions team works them.
 
-## Lead Intelligence Product Layer
+## Paid Lead Analytics Product Layer
 
-PostgreSQL is the source of truth for the intelligence layer. The API stores raw webhook events, normalized leads, property records, source/vendor metadata, lead scores, data-quality checks, and market snapshots. That keeps GHL focused on CRM execution while giving Clearpath a queryable reporting store for paid-lead decisions.
+PostgreSQL is the source of truth for the analytics layer. The API stores raw webhook events, normalized leads, property records, source/vendor metadata, lead lifecycle outcomes, lead scores, data-quality checks, and market snapshots. That keeps GHL focused on CRM execution while giving Clearpath a queryable reporting store for paid-lead buying decisions.
 
-The FastAPI service exposes the reporting layer through `/api/intelligence/*` endpoints and serves a small internal dashboard at `/dashboard`. The dashboard is intentionally read-focused: source scorecards, provider quality signals, county performance, scored leads, market context, and the needs-review queue. If Notion or GHL need updates later, they should receive compact summaries from this API rather than becoming the primary analytics store.
+The FastAPI service exposes the reporting layer through `/api/analytics/*` and `/api/intelligence/*` endpoints and serves a small internal dashboard at `/dashboard`. The dashboard is intentionally read-focused: source ROI, acquisition funnel, stale leads, filtered lead views, and county market context as supporting information. If Notion or GHL need updates later, they should receive compact summaries from this API rather than becoming the primary analytics store.
 
 County Performance is backed by structured county fields, not address-string parsing.
 Ingestion resolves county from an explicit provider/GHL field, address geocoding, or a
@@ -39,11 +39,13 @@ flowchart LR
     api --> events["Raw webhook events"]
     api --> leads["Normalized leads and properties"]
     api --> sources["Source/vendor metadata"]
+    api --> outcomes["Lifecycle outcomes"]
     api --> scores["Lead scores and quality checks"]
     api --> market["Market snapshots"]
     events --> pg["PostgreSQL"]
     leads --> pg
     sources --> pg
+    outcomes --> pg
     scores --> pg
     market --> pg
     api --> dashboard["Internal dashboard"]

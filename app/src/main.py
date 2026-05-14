@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, status
 
+from src.analytics import router as analytics_router
 from src.database import check_database_ready, init_db
 from src.dashboard import router as dashboard_router
 from src.intelligence import router as intelligence_router
@@ -22,6 +23,7 @@ app.include_router(webhook_router, prefix="/webhooks")
 app.include_router(leads_router, prefix="/api")
 app.include_router(market_router, prefix="/api")
 app.include_router(intelligence_router, prefix="/api")
+app.include_router(analytics_router, prefix="/api")
 app.include_router(dashboard_router)
 
 

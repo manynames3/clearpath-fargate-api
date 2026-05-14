@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import fetch_secret_string, get_settings
 from src.county_resolver import normalize_zip, resolve_county
 from src.database import get_session
-from src.models import DuplicateLead, Lead, LeadScore, LeadSource, Property, WebhookEvent
+from src.models import DuplicateLead, Lead, LeadOutcome, LeadScore, LeadSource, Property, WebhookEvent
 from src.schemas import GHLWebhookPayload
 
 router = APIRouter()
@@ -159,6 +159,22 @@ def _zip_from_address(address: str | None) -> str | None:
 def _has_any(value: str | None, *needles: str) -> bool:
     text = (value or "").lower()
     return any(needle in text for needle in needles)
+
+
+def _lifecycle_stage_from_status(value: str | None) -> str | None:
+    normalized = (value or "").lower().strip().replace(" ", "_").replace("-", "_")
+    aliases = {
+        "new": "received",
+        "contact": "contacted",
+        "called": "contacted",
+        "appointment_set": "appointment",
+        "offer_made": "offer",
+        "under_contract": "contract",
+        "closed_won": "closed",
+        "lost": "dead",
+    }
+    normalized = aliases.get(normalized, normalized)
+    return normalized if normalized in {"received", "contacted", "appointment", "offer", "contract", "closed", "dead"} else None
 
 
 def _max_number(value: str | None) -> int | None:
@@ -401,6 +417,7 @@ async def upsert_lead_from_payload(
 
     result = await session.execute(select(Lead).where(Lead.ghl_id == payload.contact_id))
     lead = result.scalar_one_or_none()
+    is_new_lead = lead is None
     if lead is None:
         lead = Lead(ghl_id=payload.contact_id)
         session.add(lead)
@@ -418,6 +435,16 @@ async def upsert_lead_from_payload(
     lead.state = _normalize_state(_field(fields, "state"))
 
     await session.flush()
+    if is_new_lead:
+        session.add(LeadOutcome(lead_id=lead.id, stage="received"))
+
+    lifecycle_stage = _lifecycle_stage_from_status(payload.status)
+    if lifecycle_stage and lifecycle_stage != "received":
+        existing_outcome = await session.execute(
+            select(LeadOutcome).where(LeadOutcome.lead_id == lead.id, LeadOutcome.stage == lifecycle_stage).limit(1)
+        )
+        if existing_outcome.scalar_one_or_none() is None:
+            session.add(LeadOutcome(lead_id=lead.id, stage=lifecycle_stage))
 
     prop = None
     address = _field(fields, "property_address", "address")

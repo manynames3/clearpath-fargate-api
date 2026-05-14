@@ -7,10 +7,10 @@ ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO leads (ghl_id, first_name, last_name, phone, email, status, source, county, state)
 VALUES
-    ('sample-ghl-001', 'John', 'Smith', '+14045550100', 'john.smith@example.com', 'warm', 'paid-lead-vendor-a', 'Gwinnett', 'GA'),
-    ('sample-ghl-002', 'Maria', 'Johnson', '+16785550125', 'maria.johnson@example.com', 'hot', 'facebook', 'Cobb', 'GA'),
-    ('sample-ghl-003', 'Angela', 'Brown', '+17705550199', 'angela.brown@example.com', 'new', 'direct', 'Fulton', 'GA'),
-    ('sample-ghl-004', 'Caleb', 'Ward', '+14045550104', 'caleb.ward@example.com', 'warm', 'paid-lead-vendor-a', 'Gwinnett', 'GA')
+    ('sample-ghl-001', 'John', 'Smith', '+14045550100', 'john.smith@example.com', 'closed', 'paid-lead-vendor-a', 'Gwinnett', 'GA'),
+    ('sample-ghl-002', 'Maria', 'Johnson', '+16785550125', 'maria.johnson@example.com', 'appointment', 'facebook', 'Cobb', 'GA'),
+    ('sample-ghl-003', 'Angela', 'Brown', '+17705550199', 'angela.brown@example.com', 'dead', 'direct', 'Fulton', 'GA'),
+    ('sample-ghl-004', 'Caleb', 'Ward', '+14045550104', 'caleb.ward@example.com', 'new', 'paid-lead-vendor-a', 'Gwinnett', 'GA')
 ON CONFLICT (ghl_id) DO NOTHING;
 
 UPDATE leads
@@ -76,23 +76,59 @@ SELECT id, 'sms', 'Seller asked for a call next week.', CURRENT_DATE + INTERVAL 
 FROM leads WHERE ghl_id = 'sample-ghl-001'
 ON CONFLICT DO NOTHING;
 
+INSERT INTO follow_ups (lead_id, contacted_at, method, notes, next_follow_up)
+SELECT id, NOW() - INTERVAL '35 days', 'sms', 'Needs to coordinate with sibling co-owner.', CURRENT_DATE + INTERVAL '3 days'
+FROM leads WHERE ghl_id = 'sample-ghl-002'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO lead_outcomes (lead_id, stage, occurred_at)
+SELECT id, 'received', NOW() - INTERVAL '40 days' FROM leads WHERE ghl_id = 'sample-ghl-001'
+UNION ALL
+SELECT id, 'contacted', NOW() - INTERVAL '38 days' FROM leads WHERE ghl_id = 'sample-ghl-001'
+UNION ALL
+SELECT id, 'appointment', NOW() - INTERVAL '30 days' FROM leads WHERE ghl_id = 'sample-ghl-001'
+UNION ALL
+SELECT id, 'offer', NOW() - INTERVAL '20 days' FROM leads WHERE ghl_id = 'sample-ghl-001'
+UNION ALL
+SELECT id, 'contract', NOW() - INTERVAL '10 days' FROM leads WHERE ghl_id = 'sample-ghl-001'
+UNION ALL
+SELECT id, 'closed', NOW() - INTERVAL '2 days' FROM leads WHERE ghl_id = 'sample-ghl-001'
+UNION ALL
+SELECT id, 'received', NOW() - INTERVAL '35 days' FROM leads WHERE ghl_id = 'sample-ghl-002'
+UNION ALL
+SELECT id, 'contacted', NOW() - INTERVAL '30 days' FROM leads WHERE ghl_id = 'sample-ghl-002'
+UNION ALL
+SELECT id, 'appointment', NOW() - INTERVAL '12 days' FROM leads WHERE ghl_id = 'sample-ghl-002'
+UNION ALL
+SELECT id, 'received', NOW() - INTERVAL '28 days' FROM leads WHERE ghl_id = 'sample-ghl-003'
+UNION ALL
+SELECT id, 'contacted', NOW() - INTERVAL '27 days' FROM leads WHERE ghl_id = 'sample-ghl-003'
+UNION ALL
+SELECT id, 'received', NOW() - INTERVAL '14 days' FROM leads WHERE ghl_id = 'sample-ghl-004'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO lead_outcomes (lead_id, stage, dead_reason, occurred_at)
+SELECT id, 'dead', 'Seller only wanted retail pricing', NOW() - INTERVAL '20 days'
+FROM leads WHERE ghl_id = 'sample-ghl-003'
+ON CONFLICT DO NOTHING;
+
 INSERT INTO lead_scores (lead_id, score, priority, reasons, needs_review)
-SELECT id, 96, 'high', '["Status is warm", "Urgency signal: ASAP", "Motivation signal: inherited", "Property is vacant", "Property is not listed"]'::jsonb, TRUE
+SELECT id, 96, 'high', '["Status is closed", "Urgency signal: ASAP", "Motivation signal: inherited", "Property is vacant", "Property is not listed"]'::jsonb, FALSE
 FROM leads WHERE ghl_id = 'sample-ghl-001'
 ON CONFLICT (lead_id) DO UPDATE SET score = EXCLUDED.score, priority = EXCLUDED.priority, reasons = EXCLUDED.reasons, needs_review = EXCLUDED.needs_review;
 
 INSERT INTO lead_scores (lead_id, score, priority, reasons, needs_review)
-SELECT id, 86, 'high', '["Status is hot", "Near-term urgency: 30 days", "Property is vacant", "Repair need: Deferred maintenance"]'::jsonb, TRUE
+SELECT id, 86, 'high', '["Status is appointment", "Near-term urgency: 30 days", "Property is vacant", "Repair need: Deferred maintenance"]'::jsonb, TRUE
 FROM leads WHERE ghl_id = 'sample-ghl-002'
 ON CONFLICT (lead_id) DO UPDATE SET score = EXCLUDED.score, priority = EXCLUDED.priority, reasons = EXCLUDED.reasons, needs_review = EXCLUDED.needs_review;
 
 INSERT INTO lead_scores (lead_id, score, priority, reasons, needs_review)
-SELECT id, 82, 'medium', '["Status is new", "Motivation signal: tax-delinquent", "Property is not listed"]'::jsonb, TRUE
+SELECT id, 82, 'medium', '["Status is dead", "Motivation signal: tax-delinquent", "Property is not listed"]'::jsonb, FALSE
 FROM leads WHERE ghl_id = 'sample-ghl-003'
 ON CONFLICT (lead_id) DO UPDATE SET score = EXCLUDED.score, priority = EXCLUDED.priority, reasons = EXCLUDED.reasons, needs_review = EXCLUDED.needs_review;
 
 INSERT INTO lead_scores (lead_id, score, priority, reasons, needs_review)
-SELECT id, 78, 'medium', '["Status is warm", "Medium-term urgency: 60-90 days", "Repair scope: Major remodel"]'::jsonb, TRUE
+SELECT id, 78, 'medium', '["Status is new", "Medium-term urgency: 60-90 days", "Repair scope: Major remodel"]'::jsonb, TRUE
 FROM leads WHERE ghl_id = 'sample-ghl-004'
 ON CONFLICT (lead_id) DO UPDATE SET score = EXCLUDED.score, priority = EXCLUDED.priority, reasons = EXCLUDED.reasons, needs_review = EXCLUDED.needs_review;
 

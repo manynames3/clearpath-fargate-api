@@ -36,7 +36,7 @@ export API_BASE_URL="$(terraform -chdir=terraform/environments/dev output -raw a
 | ALB target health | `docs/screenshots/alb-target-health.png` | Targets healthy on `/health`. |
 | RDS PostgreSQL | `docs/screenshots/rds-instance.png` | Private database, encrypted storage, IAM auth enabled. |
 | RDS Proxy | `docs/screenshots/rds-proxy-targets.png` | Proxy target registered and available. |
-| Intelligence dashboard | `docs/screenshots/dashboard.png` | `/dashboard` showing provider/source scorecard, quality signals, lead scores, and county performance. |
+| Paid lead dashboard | `docs/screenshots/dashboard.png` | `/dashboard` showing source ROI, acquisition funnel, stale lead queue, filtered lead table, and supporting market context. |
 | CloudFront | `docs/screenshots/cloudfront-distribution.png` | Distribution deployed with generated domain, or API aliases if custom-domain mode is enabled. |
 | WAF | `docs/screenshots/waf-web-acl.png` | WebACL attached to CloudFront. |
 | CloudWatch | `docs/screenshots/cloudwatch-dashboard.png` | ECS, ALB, CloudFront, and RDS widgets visible. |
@@ -90,25 +90,34 @@ Expected: the webhook lead appears with property data.
 If a live GHL workflow is connected, expected: the lead source/vendor, county, property address, and situation match the GHL delivery payload.
 
 ```bash
-curl -f "$API_BASE_URL/api/intelligence/summary" \
+curl -f "$API_BASE_URL/api/analytics/source-roi" \
   -H "X-Clearpath-API-Key: <redacted>"
 ```
 
-Expected: totals for leads, sources, review queue, recent webhook events, and average score.
+Expected: source-level lead count, estimated spend, funnel counts, close rate, and cost-per-close metrics.
 
 ```bash
-curl -f "$API_BASE_URL/api/intelligence/source-performance" \
+curl -f "$API_BASE_URL/api/analytics/funnel" \
   -H "X-Clearpath-API-Key: <redacted>"
 ```
 
-Expected: paid lead source/vendor scorecard with lead counts, review count, hot/warm count, spend estimate, and average score.
+Expected: lifecycle conversion counts from received through contacted, appointment, offer, contract, closed, and dead.
 
 ```bash
-curl -f "$API_BASE_URL/api/intelligence/lead-scores?needs_review=true" \
+curl -f "$API_BASE_URL/api/analytics/stale-leads?days=7" \
   -H "X-Clearpath-API-Key: <redacted>"
 ```
 
-Expected: scored leads with priority, reasons, and needs-review flags.
+Expected: active leads with no recent lifecycle or follow-up activity.
+
+```bash
+curl -X PATCH "$API_BASE_URL/api/leads/<lead_id>/outcome" \
+  -H "Content-Type: application/json" \
+  -H "X-Clearpath-API-Key: <redacted>" \
+  -d '{"stage":"appointment","notes":"Validation lifecycle update"}'
+```
+
+Expected: the lead status updates and the appended lifecycle event appears in analytics.
 
 ```bash
 curl -i "$API_BASE_URL/api/market/gwinnett"

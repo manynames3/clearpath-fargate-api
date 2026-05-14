@@ -3,13 +3,13 @@
 [![Build and Deploy](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/build-push.yml/badge.svg)](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/build-push.yml)
 [![Terraform Validate](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/terraform-validate.yml/badge.svg)](https://github.com/manynames3/clearpath-fargate-api/actions/workflows/terraform-validate.yml)
 
-Containerized REST API on ECS Fargate, RDS PostgreSQL, RDS Proxy, CloudFront, optional Route53, WAF, and Secrets Manager.
+GHL-connected paid lead analytics dashboard on ECS Fargate, RDS PostgreSQL, RDS Proxy, CloudFront, optional Route53, WAF, and Secrets Manager.
 
 This repository is built as a production-pattern AWS Terraform project for Clearpath Property Group's paid off-market real estate lead workflow. It is intentionally small at the application layer: the infrastructure is the story. ECS Fargate is the primary AWS deployment path, with an optional Kubernetes/EKS manifest track in `k8s/`.
 
 ## TLDR
 
-Clearpath Lead Intelligence API is a containerized FastAPI service that receives GoHighLevel-compatible lead webhook events, normalizes seller/property data into PostgreSQL, enriches records with source, score, and county-market context, and exposes an internal dashboard for deciding which paid lead sources and markets are worth buying again.
+Clearpath Lead Intelligence API is a containerized FastAPI service that receives GoHighLevel-compatible lead webhook events, normalizes paid seller lead data into PostgreSQL, tracks each lead through the acquisition funnel, and exposes an internal dashboard for source ROI: cost per lead, appointment, contract, and closed deal.
 
 The project demonstrates production-style AWS delivery with Terraform: private ECS Fargate tasks, ALB routing, RDS PostgreSQL behind RDS Proxy, Secrets Manager, CloudFront, WAF, CloudWatch, CI validation, and documented teardown. It was deployed briefly for AWS evidence, screenshotted, and destroyed to avoid idle cloud costs.
 
@@ -19,15 +19,15 @@ Locally, the same app can run with Docker Compose and Postgres, or with a SQLite
 
 Clearpath already uses GoHighLevel as the CRM. Paid lead providers send seller contact and property information into GHL, and GHL remains responsible for sales pipelines, automatic follow-up sequences, notifications, and Notion handoff workflows.
 
-This API does not replace that CRM workflow. It receives a copy of the GHL workflow event and creates an independent, queryable lead intelligence layer in PostgreSQL. The practical end-user value is source accountability and lead analysis: which paid lead sources, counties, provider tags, and seller situations are worth buying again, and what county-level market context should be shown with each full-address lead.
+This API does not replace that CRM workflow. It receives a copy of the GHL workflow event and creates an independent, queryable paid-lead analytics layer in PostgreSQL. The practical end-user value is source accountability: which paid lead providers produce appointments, offers, contracts, and closed deals after lead cost is considered.
 
 If the provider sends a full property address but no county, the ingestion path resolves county automatically instead of making the dashboard parse address text. It prefers an explicit provider/GHL county field, then address geocoding, then a ZIP fallback with stored resolution confidence.
 
-In short: GHL runs the sales workflow; Clearpath Lead Intelligence API owns the structured reporting and market-context layer.
+In short: GHL runs the sales workflow; Clearpath Lead Intelligence API owns provider normalization, lifecycle outcome history, source ROI, stale lead visibility, and supporting market context.
 
-This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting queries with an API key, accepts signed GHL-compatible webhook payloads, serves cached market snapshots, and exposes intelligence endpoints for source performance, lead scores, county performance, and data-quality checks.
+This is useful when the question is not "who should we call next?" but "what paid lead inventory is worth buying again?" The implemented API stores normalized lead and property records, protects reporting queries with an API key, accepts signed GHL-compatible webhook payloads, serves cached market snapshots, and exposes analytics endpoints for source ROI, funnel conversion, filtered lead views, stale lead follow-up, and lifecycle outcome updates.
 
-The internal dashboard at `/dashboard` turns those API results into an operator-facing view: provider/source scorecard, hot/warm/dead breakdowns, newest leads with score reasons, market context by county, provider quality signals, and the current "needs review" queue.
+The internal dashboard at `/dashboard` turns those API results into an operator-facing view: source ROI scorecard, acquisition funnel, stale lead queue, filterable all-leads table, and county market context as supporting information.
 
 ## Deployment Status
 
@@ -90,6 +90,7 @@ Review [docs/cost-estimate.md](docs/cost-estimate.md) before applying in AWS.
 Review [docs/kubernetes.md](docs/kubernetes.md) for the Kubernetes/EKS track.
 Use [docs/ghl-integration.md](docs/ghl-integration.md) for the GoHighLevel-ready webhook receiver, setup requirements, and payload mapping.
 Use [docs/lead-scoring.md](docs/lead-scoring.md) for the rule-based scoring model, provider field mapping, and CSV backfill path.
+Use [docs/paid-lead-analytics.md](docs/paid-lead-analytics.md) for the V2 product scope: source ROI, lifecycle outcomes, stale lead detection, and why this is not a CRM or spreadsheet clone.
 Use [docs/github-deploy-setup.md](docs/github-deploy-setup.md) for the manual GitHub Actions image deployment path.
 Use [docs/terraform-backend.md](docs/terraform-backend.md) before moving from local state to remote Terraform state.
 See [docs/test-results.md](docs/test-results.md) for the latest local validation summary and deployed CloudFront smoke artifact.
@@ -150,15 +151,25 @@ curl -f "http://localhost:8000/api/market/gwinnett"
 ```
 
 ```bash
-curl -f "http://localhost:8000/api/intelligence/summary"
+curl -f "http://localhost:8000/api/analytics/source-roi"
 ```
 
 ```bash
-curl -f "http://localhost:8000/api/intelligence/source-performance"
+curl -f "http://localhost:8000/api/analytics/funnel"
 ```
 
 ```bash
-curl -f "http://localhost:8000/api/intelligence/lead-scores?needs_review=true"
+curl -f "http://localhost:8000/api/analytics/leads?source=paid-lead-vendor-a&lifecycle_stage=appointment"
+```
+
+```bash
+curl -f "http://localhost:8000/api/analytics/stale-leads?days=7"
+```
+
+```bash
+curl -X PATCH "http://localhost:8000/api/leads/{lead_id}/outcome" \
+  -H "Content-Type: application/json" \
+  -d '{"stage": "appointment", "notes": "Seller booked a property walkthrough"}'
 ```
 
 ```bash
@@ -273,12 +284,18 @@ Security group flow is intentionally narrow:
 - `POST /webhooks/ghl` - GoHighLevel-compatible contact webhook ingestion
 - `GET /api/leads?county=Gwinnett&status=warm&days_since_contact=30` - protected reporting query with `X-Clearpath-API-Key` when configured
 - `GET /api/market/gwinnett`
-- `GET /api/intelligence/summary`
-- `GET /api/intelligence/source-performance`
+- `GET /api/analytics/leads`
+- `GET /api/analytics/funnel`
+- `GET /api/analytics/source-roi`
+- `GET /api/analytics/stale-leads`
+- `PATCH /api/leads/{lead_id}/outcome`
+- `PATCH /api/analytics/sources/{source_name}/cost`
+- `GET /api/intelligence/summary` - supporting operational summary
+- `GET /api/intelligence/source-performance` - legacy source-quality view; source ROI is the primary V2 view
 - `GET /api/intelligence/duplicates` - optional data-quality guardrail, not the primary product workflow
-- `GET /api/intelligence/lead-scores`
-- `GET /api/intelligence/county-performance`
-- `GET /dashboard` - internal lead intelligence dashboard
+- `GET /api/intelligence/lead-scores` - supporting explainable score output
+- `GET /api/intelligence/county-performance` - supporting market/geography context
+- `GET /dashboard` - internal paid lead analytics dashboard
 - `GET /health`
 - `GET /ready` - database readiness check
 
@@ -299,7 +316,7 @@ terraform -chdir=terraform/environments/dev validate
 
 ## Database Migrations
 
-The repo now includes an Alembic migration scaffold under `app/alembic/`. The initial revision mirrors `sql/schema.sql` and gives the project a production-style path for future schema changes. The short-lived AWS validation path still uses `scripts/migrate.sh` as a simple bootstrap script.
+The repo includes Alembic migrations under `app/alembic/`. The schema now includes lead source metadata, normalized property details, lead scores, raw webhook events, duplicate guardrails, and `lead_outcomes` lifecycle history for ROI/funnel analytics. The short-lived AWS validation path still uses `scripts/migrate.sh` as a simple bootstrap script.
 
 ## Apply Gate
 

@@ -31,8 +31,8 @@ Keep the live window focused on evidence, not extra build work:
 - Confirm CloudFront sends the origin header and ALB listener rules require it.
 - Trigger GitHub Actions `Build and Deploy` manually with `deploy=true`.
 - Capture ECS service health, task health, ALB target health, RDS Proxy target health, CloudFront deployed status, and WAF attachment.
-- Run API smoke tests through `api_base_url`, including `/health`, `/ready`, a GHL-style test payload to `/webhooks/ghl`, protected `/api/leads`, `/api/intelligence/summary`, `/api/intelligence/source-performance`, `/api/intelligence/lead-scores?needs_review=true`, and `/api/market/gwinnett`.
-- Open `/dashboard` through `api_base_url` and capture the internal source scorecard, provider quality signals, lead scores, and county performance view.
+- Run API smoke tests through `api_base_url`, including `/health`, `/ready`, a GHL-style test payload to `/webhooks/ghl`, protected `/api/leads`, `/api/analytics/source-roi`, `/api/analytics/funnel`, `/api/analytics/stale-leads?days=7`, and `/api/market/gwinnett`.
+- Open `/dashboard` through `api_base_url` and capture the source ROI scorecard, acquisition funnel, stale lead queue, filtered lead table, and supporting market context.
 - If a real GoHighLevel account is available, add the Clearpath Custom Webhook action to the existing paid-lead intake workflow and capture the workflow delivery log. Otherwise, document the endpoint as GHL-ready but not externally connected.
 - Capture CloudFront cache headers on the second market endpoint request.
 - Run `make deployment-evidence` to save read-only AWS CLI output.
@@ -65,9 +65,10 @@ After apply, capture:
 - GHL-style webhook receiver test returning `{"status":"accepted"}` and creating a lead
 - optional real GoHighLevel workflow delivery log from the paid-lead intake workflow, if a GHL account/location was connected during the validation window
 - protected `/api/leads` response using `X-Clearpath-API-Key`
-- protected `/api/intelligence/summary` response showing lead/source/review totals and recent webhook events
-- protected `/api/intelligence/source-performance` response showing source/vendor scorecard data
-- protected `/api/intelligence/lead-scores?needs_review=true` response showing score reasons
+- protected `/api/analytics/source-roi` response showing source cost attribution and cost-per-close metrics
+- protected `/api/analytics/funnel` response showing lifecycle conversion counts
+- protected `/api/analytics/stale-leads?days=7` response showing leads with no recent lifecycle/follow-up activity
+- protected `PATCH /api/leads/{lead_id}/outcome` response showing lifecycle outcome updates
 - `/dashboard` screenshot showing the end-user product surface
 - `/api/market/gwinnett` response with cache headers
 
@@ -85,8 +86,8 @@ Do this only if the GHL account/location is available during the paid AWS window
 6. Trigger one paid-lead-style validation contact.
 7. Capture the GHL workflow execution/delivery log showing a `200` response from Clearpath API.
 8. Query `/api/leads` with `X-Clearpath-API-Key` and capture the stored lead/source/property data.
-9. Query `/api/intelligence/source-performance` and `/api/intelligence/lead-scores?needs_review=true` to show the lead now participates in the reporting layer.
-10. Open `/dashboard` and capture the same source/vendor and review queue evidence.
+9. Query `/api/analytics/source-roi`, `/api/analytics/funnel`, and `/api/analytics/leads?source=<source>` to show the lead now participates in source ROI and lifecycle reporting.
+10. Open `/dashboard` and capture the same source/vendor, funnel, and stale-lead evidence.
 11. Disable or remove the temporary webhook action before teardown if it points to the generated CloudFront URL.
 
 Collect read-only AWS CLI output into `docs/evidence/<timestamp>/`:
